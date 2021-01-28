@@ -1,0 +1,13 @@
+/* @import url('./reset.css'); */
+html {
+  max-width: 800px;
+}
+footer {
+  border-top: dotted 5px;
+  border-color: #aaa;
+  margin-top: 3rem;
+  padding-top: 1rem;
+}
+footer a {
+  margin: 2rem;
+}

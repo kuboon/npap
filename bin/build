@@ -1,0 +1,5 @@
+#!/bin/env sh
+land aleph build
+rm -r docs/_aleph
+rm -r docs/NPAP
+mv dist/* docs
