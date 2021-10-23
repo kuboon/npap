@@ -18,7 +18,7 @@ export default function Instruction () {
       </head>
       <h1 className='logo'>
           <Logo />
-          鍵生成、使い方説明
+          鍵生成ページ
       </h1>
 
       <div id='instruction'>

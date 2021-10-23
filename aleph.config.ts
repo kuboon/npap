@@ -4,7 +4,7 @@ import type { Config } from 'aleph/types.d.ts'
 export default <Config>{
   build: {
     target: 'es2020',
-    browsers: { chrome: 90, safari: 13 },
+    browsers: { chrome: 90, ios: 13 },
     outputDir: '/dist',
   },
   i18n: {
