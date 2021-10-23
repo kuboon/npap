@@ -1,3 +1,4 @@
+import Logo from '~/components/logo.tsx'
 import { unwrapAndDec } from '../lib/crypto.ts'
 import { deserealizePrivateKey } from '../lib/keys.ts'
 import React, { useRef } from 'react'
@@ -16,7 +17,7 @@ export default function Receive () {
   const params = Object.fromEntries(new URLSearchParams(hash))
   const { receive_by, ...secret } = params
   const { n } = secret
-  const sendPath = `#send_to=${encodeURI(receive_by)}&n=${n}`
+  const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(receive_by)}&n=${n}`
   async function fileDec (e: React.ChangeEvent) {
     const file = (e.target as HTMLInputElement).files![0]
     if (!file) return
@@ -52,7 +53,10 @@ export default function Receive () {
       <head>
         <title>{receive_by}の秘密鍵ページ:NPAP</title>
       </head>
-      <h1>秘密鍵ページ</h1>
+      <h1 className='logo'>
+        <Logo />
+        秘密鍵ページ
+      </h1>
       <p>所有者: {receive_by}</p>
       <p>
         このページはあなた専用のものです。
@@ -64,7 +68,7 @@ export default function Receive () {
       </p>
       <h2>「暗号化ページ」を送る</h2>
       <p>以下のURLをメール等で送信者に送付してください。</p>
-      <input type='text' value={sendPath} readOnly style={{ width: '100%' }} />
+      <input type='text' value={sendPath} readOnly style={{ width: '100%' }} onClick={e=>(e.target as HTMLInputElement).select()} />
       <br />
       <a href={sendPath} target='_blank'>
         開いてみる

@@ -11,22 +11,22 @@ export default function Home () {
   return (
     <div className='page'>
       <head>
-        <title>SPAP</title>
+        <title>NPAP</title>
       </head>
       <h1 className='logo'>
         <Logo />
-        SPAP
+        NPAP
       </h1>
       <p>
-        <a href='/spap'>SPAP を開く</a>
+        <a href='/NPAP'>NPAP を開く</a>
       </p>
       <p>
-        <a href='#'>※ 準備中 SPAP をダウンロード (htmlファイル)</a>
+        <a href='#'>※ 準備中 NPAP をダウンロード (htmlファイル)</a>
       </p>
       <p>
-        <a href='https://github.com/kuboon/spap'>Github</a>
+        <a href='https://github.com/kuboon/npap'>Github</a>
       </p>
-      <p>SPAP は PPAP を今すぐ廃止できるソリューションです。</p>
+      <p>NPAP は PPAP を今すぐ廃止できるソリューションです。</p>
       <ul>
         <li>
           パスワード不要！ 暗号鍵が埋め込まれたURLをブックマークしておくだけ

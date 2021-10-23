@@ -18,13 +18,13 @@ export default function Instruction () {
       </head>
       <h1 className='logo'>
           <Logo />
-          NPAP
+          鍵生成、使い方説明
       </h1>
 
       <div id='instruction'>
         <p>
-          受信者のお名前
-          <input type='text' ref={inputRef} />
+          受信者のお名前<br />
+          <input type='text' ref={inputRef} required={true}/><br />
           <button onClick={generate}>「秘密鍵ページ」を作成</button>
         </p>
         <h2>使い方</h2>

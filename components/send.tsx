@@ -1,3 +1,4 @@
+import Logo from '~/components/logo.tsx'
 import { encAndWrap } from '../lib/crypto.ts'
 import { deserealizePublicKey } from '../lib/keys.ts'
 import React, { useRef } from 'react'
@@ -44,7 +45,10 @@ export default function Send () {
       <head>
         <title>{name}宛暗号化ページ:NPAP</title>
       </head>
-      <h1>暗号化ページ</h1>
+      <h1 className='logo'>
+        <Logo />
+        暗号化ページ
+      </h1>
       <p>このページから暗号化したファイルは、{name}さんだけが開けます。</p>
       <h2>ファイルの暗号化</h2>
       <input type='file' onChange={fileEnc} />
