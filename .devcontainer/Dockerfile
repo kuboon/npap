@@ -13,3 +13,4 @@ RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.8.1 \
  && echo "source ~/.asdf/asdf.fish" >> $HOME/.config/fish/config.fish
 RUN asdf plugin add deno && asdf install deno latest && asdf global deno latest
 RUN deno install -A -f -n land https://deno.land/x/land@v0.7.0/cli.ts
+RUN asdf reshim
