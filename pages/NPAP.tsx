@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Instruction from '~/components/instruction.tsx'
 import Send from '~/components/send.tsx'
 import Receive from '~/components/receive.tsx'
@@ -21,12 +21,7 @@ export default function App () {
 
   return (
     <>
-      <head>
-        <link rel='stylesheet' href='../style/index.css' />
-      </head>
-      <div className='page'>
-        <Pages cmd={hash} />
-      </div>
+      <Pages cmd={hash} />
       <footer>
         <a href='#' target='_blank'>鍵生成ページ</a>
         <a href='https://npap.kbn.one' target='_blank'>NPAP Top</a>

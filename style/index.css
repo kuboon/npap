@@ -1,6 +1,7 @@
 /* @import url('./reset.css'); */
 :root {
-  --color1: #aaa
+  --color1: rgb(248, 159, 159);
+  --color2: rgb(114, 75, 75);
 }
 html {
   max-width: 800px;
@@ -8,17 +9,23 @@ html {
 body {
   margin: 1rem;
 }
-h1.logo {
-  border-bottom: dotted 5px;
-  border-color: var(--color1);
+header {
+  margin: -1rem -1rem 0;
+  padding: 0.7rem 1rem 0.4rem;
+
+  background-color: var(--color1);
+  font-size: 2rem;
+  color: var(--color2);
 }
-h1.logo img {
-  height: 7rem;
-  margin: 0 1rem 1rem 0;
+header svg {
+  fill: var(--color2);
+  height: 1.6rem;
+  vertical-align: baseline;
 }
-h1.logo > * {
-  vertical-align: middle;
+header small {
+  font-size: 1rem;
 }
+
 footer {
   border-top: dotted 5px;
   border-color: var(--color1);

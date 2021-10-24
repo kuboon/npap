@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import Logo from '~/components/logo.tsx'
+import React from 'react'
 
 declare namespace JSX {
   interface IntrinsicElements {
@@ -9,14 +8,8 @@ declare namespace JSX {
 
 export default function Home () {
   return (
-    <div className='page'>
-      <head>
-        <title>NPAP</title>
-      </head>
-      <h1 className='logo'>
-        <Logo />
-        NPAP
-      </h1>
+    <main id='top'>
+      <h1>パスワードなしで安全ファイル暗号化</h1>
       <p>
         <a href='/NPAP'>NPAP を開く</a>
       </p>
@@ -37,6 +30,6 @@ export default function Home () {
         </li>
         <li>自ドメイン内へ簡単導入！ html ファイルを1つ置くだけで導入完了</li>
       </ul>
-    </div>
+    </main>
   )
 }

@@ -6,8 +6,12 @@ import { encode } from 'msgpack'
 
 async function encrypt (n: string, plain: ArrayBuffer) {
   const pKey = await deserealizePublicKey(n)
-  const {iv, key, ciphered } = await encAndWrap(pKey, plain)
-  const msg = encode({iv, key: new Uint8Array(key), ciphered: new Uint8Array(ciphered)})
+  const { iv, key, ciphered } = await encAndWrap(pKey, plain)
+  const msg = encode({
+    iv,
+    key: new Uint8Array(key),
+    ciphered: new Uint8Array(ciphered)
+  })
   console.log(msg)
   return msg
 }
@@ -21,7 +25,7 @@ export default function Send () {
   const pub = params.get('n')!
   async function fileEnc (e: React.ChangeEvent) {
     const file = (e.target as any).files[0]
-    if(!file)return
+    if (!file) return
     const reader = new FileReader()
     reader.onload = async function () {
       const buf = reader.result
@@ -41,18 +45,15 @@ export default function Send () {
     reader.readAsArrayBuffer(file)
   }
   return (
-    <>
+    <main id='send'>
       <head>
         <title>{name}宛暗号化ページ:NPAP</title>
       </head>
-      <h1 className='logo'>
-        <Logo />
-        暗号化ページ
-      </h1>
+      <h1>暗号化ページ</h1>
       <p>このページから暗号化したファイルは、{name}さんだけが開けます。</p>
       <h2>ファイルの暗号化</h2>
       <input type='file' onChange={fileEnc} />
       <div ref={downloadRef}></div>
-    </>
+    </main>
   )
 }
