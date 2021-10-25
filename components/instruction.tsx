@@ -1,4 +1,3 @@
-import Logo from '~/components/logo.tsx'
 import React, { useRef } from 'react'
 import { generateSerializedPrivateKey } from '../lib/keys.ts'
 

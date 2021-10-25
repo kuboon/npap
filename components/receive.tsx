@@ -1,4 +1,3 @@
-import Logo from '~/components/logo.tsx'
 import { unwrapAndDec } from '../lib/crypto.ts'
 import { deserealizePrivateKey } from '../lib/keys.ts'
 import React, { useRef } from 'react'
