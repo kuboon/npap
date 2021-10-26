@@ -14,7 +14,7 @@ export default function Home () {
         <a href='/NPAP'>NPAP を開く</a>
       </p>
       <p>
-        <a href='#'>※ 準備中 NPAP をダウンロード (htmlファイル)</a>
+        <a href='/NPAP.html' download="NPAP.html">NPAP をダウンロード (htmlファイル)</a>
       </p>
       <p>
         <a href='https://github.com/kuboon/npap'>Github</a>

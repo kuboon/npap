@@ -18,10 +18,10 @@ export default <Config> {
   build: {
     target: "es2020",
     browsers: { chrome: 90, ios: 13 },
-    outputDir: "/dist",
+    outputDir: "/docs",
   },
   i18n: {
     defaultLocale: "ja",
   },
-  plugins: [bundleJs],
+  //plugins: [bundleJs],
 };

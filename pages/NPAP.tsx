@@ -1,13 +1,8 @@
-import React, { useState } from 'react'
+/// <reference lib="dom" />
 import Instruction from '~/components/instruction.tsx'
 import Send from '~/components/send.tsx'
 import Receive from '~/components/receive.tsx'
-
-declare namespace JSX {
-  interface IntrinsicElements {
-    [elemName: string]: any
-  }
-}
+import React, { useState } from 'react'
 
 export default function App () {
   const [hash, setHash] = useState(location.hash)
@@ -20,13 +15,17 @@ export default function App () {
   )
 
   return (
-    <>
+    <div id='npap'>
       <Pages cmd={hash} />
       <footer>
-        <a href='#' target='_blank'>鍵生成ページ</a>
-        <a href='https://npap.kbn.one' target='_blank'>NPAP Top</a>
+        <a href='#' target='_blank'>
+          鍵生成ページ
+        </a>
+        <a href='https://npap.kbn.one' target='_blank'>
+          NPAP Top
+        </a>
       </footer>
-    </>
+    </div>
   )
 }
 
