@@ -31,7 +31,8 @@ footer {
   border-color: var(--color1);
   margin-top: 3rem;
   padding-top: 1rem;
+  display: flex;
 }
-footer a {
-  margin: 2rem;
+footer > * {
+  margin: 1rem 2rem;
 }

@@ -1,7 +1,7 @@
 import Logo from '~/components/logo.tsx'
-import { encAndWrap } from '../lib/crypto.ts'
+import { encAndWrap, thumbprint } from '../lib/crypto.ts'
 import { deserealizePublicKey } from '../lib/keys.ts'
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { encode } from 'msgpack'
 
 async function encrypt (n: string, plain: ArrayBuffer) {
@@ -12,7 +12,6 @@ async function encrypt (n: string, plain: ArrayBuffer) {
     key: new Uint8Array(key),
     ciphered: new Uint8Array(ciphered)
   })
-  console.log(msg)
   return msg
 }
 const blobs: Blob[] = []
@@ -20,9 +19,13 @@ export default function Send () {
   const downloadRef = useRef<HTMLDivElement>(null)
   const hash = typeof location === 'object' && location.hash.substring(1)
   if (!hash) return <p>no hash</p>
+  const [thumbp, setThumbp] = useState('')
   const params = new URLSearchParams(hash)
   const name = params.get('send_to')
   const pub = params.get('n')!
+  useEffect(() => {
+    thumbprint(pub).then(setThumbp)
+  })
   async function fileEnc (e: React.ChangeEvent) {
     const file = (e.target as any).files[0]
     if (!file) return
@@ -50,6 +53,7 @@ export default function Send () {
         <title>{name}宛暗号化ページ:NPAP</title>
       </head>
       <h1>暗号化ページ</h1>
+      <p>thumbprint: {thumbp}</p>
       <p>このページから暗号化したファイルは、{name}さんだけが開けます。</p>
       <h2>ファイルの暗号化</h2>
       <input type='file' onChange={fileEnc} />
