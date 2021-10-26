@@ -53,7 +53,7 @@ export default function Send () {
         <title>{name}宛暗号化ページ:NPAP</title>
       </head>
       <h1>暗号化ページ</h1>
-      <p>thumbprint: {thumbp}</p>
+      <p>鍵指紋: {thumbp}</p>
       <p>このページから暗号化したファイルは、{name}さんだけが開けます。</p>
       <h2>ファイルの暗号化</h2>
       <input type='file' onChange={fileEnc} />

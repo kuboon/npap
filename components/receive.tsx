@@ -67,7 +67,7 @@ export default function Receive () {
       </head>
       <h1>秘密鍵ページ</h1>
       <p>所有者: {receive_by}</p>
-      <p>thumbprint: {thumbp}</p>
+      <p>鍵指紋: {thumbp}</p>
       <p>
         このページはあなた専用のものです。
         <br />
