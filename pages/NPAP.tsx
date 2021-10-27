@@ -1,24 +1,17 @@
 /// <reference lib="dom" />
+import { missingFeature } from "../lib/crypto.ts";
 import Instruction from '~/components/instruction.tsx'
 import Send from '~/components/send.tsx'
 import Receive from '~/components/receive.tsx'
 import React, { useState } from 'react'
 
-function cryptoAvailable () {
-  if (!crypto) return false
-  if (!crypto.subtle) return false
-  if (!crypto.subtle.generateKey) return false
-  if (!crypto.subtle.encrypt) return false
-  if (!crypto.subtle.decrypt) return false
-  if (!crypto.subtle.wrapKey) return false
-  if (!crypto.subtle.unwrapKey) return false
-  return true
-}
+const missing = missingFeature()
 export default function Npap () {
-  if (!cryptoAvailable()) {
+  if (missing) {
     return (
       <p>
-        お使いのブラウザはNPAPに対応しておりません。セキュリティ確保のためにも最新のブラウザをご利用ください。
+        お使いのブラウザはNPAPに対応しておりません。 セキュリティ確保のためにも最新のブラウザをご利用ください。<br />
+        不足機能: {missing}
       </p>
     )
   }
@@ -28,7 +21,7 @@ export default function Npap () {
     () => setHash(location.hash.substr(1)),
     false
   )
-  const version = '1.0'
+  const version = '1.1'
 
   return (
     <div id='npap'>
@@ -48,10 +41,13 @@ export default function Npap () {
 
 function Pages ({ urlString }: { urlString: string }) {
   const params = Object.fromEntries(new URLSearchParams(urlString))
-  if (params.send_to) return <Send sendTo={params.sendTo} n={params.n} />
-  if (params.receive_by){
-    const {receive_by, ...secrets} = params
+  if (params.send_to) {
+    const { send_to, ...pub } = params
+    return <Send sendTo={send_to} pub={pub} />
+  }
+  if (params.receive_by) {
+    const { receive_by, ...secrets } = params
     return <Receive receiveBy={receive_by} secrets={secrets} />
-  } 
+  }
   return <Instruction />
 }

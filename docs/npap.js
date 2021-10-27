@@ -1,30 +1,17 @@
-const jwkBase = {
-    alg: "RSA-OAEP-256",
-    e: "AQAB",
-    ext: false,
-    kty: "RSA"
-};
-const KeyEssence = [
-    "d",
-    "dp",
-    "dq",
-    "n",
-    "p",
-    "q",
-    "qi"
-];
-function minifyJwk(jwk) {
-    return Object.entries(jwk).filter(([k])=>KeyEssence.includes(k)
-    );
-}
-function fullifyToJwk(obj, ops) {
-    return {
-        key_ops: [
-            ops
-        ],
-        ...jwkBase,
-        ...obj
-    };
+function missingFeature() {
+    if (typeof Deno != 'undefined') return null;
+    if (typeof crypto == "undefined") return "crypto";
+    const { subtle  } = crypto;
+    if (!subtle) return "crypto.subtle";
+    if (!subtle.generateKey) return "crypto.subtle.generateKey";
+    if (!subtle.encrypt) return "crypto.subtle.encrypt";
+    if (!subtle.decrypt) return "crypto.subtle.decrypt";
+    if (!subtle.wrapKey) return "crypto.subtle.wrapKey";
+    if (!subtle.unwrapKey) return "crypto.subtle.unwrapKey";
+    if (!subtle.importKey) return "crypto.subtle.importKey";
+    if (!subtle.exportKey) return "crypto.subtle.exportKey";
+    if (!crypto.getRandomValues) return "crypto.getRandomValues";
+    return null;
 }
 const subtle = window.crypto?.subtle;
 const RSAalgorithm = {
@@ -96,11 +83,11 @@ async function thumbprint(jwk) {
     });
     const ab = new TextEncoder().encode(json).buffer;
     const hash = await subtle.digest("SHA-256", ab);
-    const str = [
+    const hexArray = [
         ...new Uint8Array(hash)
     ].map((x)=>("0" + x.toString(16)).slice(-2)
-    ).join(":");
-    return str;
+    );
+    return hexArray;
 }
 async function aesEncrypt(key, iv, plain) {
     return subtle.encrypt({
@@ -113,6 +100,34 @@ async function aesDecrypt(key, iv, encrypted) {
         name: "AES-CBC",
         iv
     }, key, encrypted);
+}
+const jwkBase = {
+    alg: "RSA-OAEP-256",
+    e: "AQAB",
+    ext: false,
+    kty: "RSA"
+};
+const KeyEssence = [
+    "d",
+    "dp",
+    "dq",
+    "n",
+    "p",
+    "q",
+    "qi"
+];
+function minifyJwk(jwk) {
+    return Object.entries(jwk).filter(([k])=>KeyEssence.includes(k)
+    );
+}
+function fullifyToJwk(obj, ops) {
+    return {
+        key_ops: [
+            ops
+        ],
+        ...jwkBase,
+        ...obj
+    };
 }
 var b = Object.create;
 var s = Object.defineProperty;
@@ -1785,33 +1800,49 @@ async function decryptBuffer(jwk, encoded) {
         throw new CryptoPackError(msg, e);
     });
 }
+function Thumbprint({ jwk  }) {
+    const [thumbp, setThumbp] = qe('');
+    xe(()=>{
+        blockedThumbprint(jwk).then(setThumbp);
+    });
+    return export_default1.createElement(export_default1.Fragment, null, export_default1.createElement("p", null, "鍵指紋:"), export_default1.createElement("div", {
+        className: "thumbprint"
+    }, thumbp));
+}
 async function encryptFileAndGetResultNode(jwk, file, filename) {
     const plain = await readAsArrayBuffer(file);
-    const retElem = document.createElement("p");
     return encryptBuffer(jwk, plain).then((encoded)=>{
         const a = arrayBufferToDownloadAnchor(encoded, filename);
-        retElem.insertAdjacentElement("afterbegin", a);
-        return retElem;
+        return export_default1.createElement("p", null, a);
     }).catch((err)=>{
-        let msg = file.name + ": " + err.message;
-        retElem.insertAdjacentText("afterbegin", msg);
-        return retElem;
+        let msg = file.name + ': ' + err.message;
+        return export_default1.createElement("p", null, msg);
     });
 }
 async function decryptFileAndGetResultNode(jwk, file) {
     const encoded = await readAsArrayBuffer(file);
-    const retElem = document.createElement("p");
     return decryptBuffer(jwk, encoded).then((plain)=>{
-        const filename = file.name.split(".").slice(0, -2).join(".");
+        const filename = file.name.split('.').slice(0, -2).join('.');
         const a = arrayBufferToDownloadAnchor(plain, filename);
-        retElem.insertAdjacentElement("afterbegin", a);
-        return retElem;
+        return export_default1.createElement("p", null, a);
     }).catch((err)=>{
-        let msg = file.name + ": " + err.message;
-        retElem.insertAdjacentText("afterbegin", msg);
-        return retElem;
+        let msg = file.name + ': ' + err.message;
+        return export_default1.createElement("p", null, msg);
     });
 }
+async function blockedThumbprint(privKey) {
+    const a = await thumbprint(privKey);
+    let ret = [];
+    for (const slice of eachSlice(a, 8)){
+        ret.push(slice.join(':'));
+    }
+    return ret.join(':' + String.fromCharCode(8203));
+}
+const eachSlice = function*(array, size) {
+    for(let i = 0, l = array.length; i < l; i += size){
+        yield array.slice(i, i + size);
+    }
+};
 const readAsArrayBuffer = async (file)=>new Promise((ok, ng)=>{
         const reader = new FileReader();
         reader.onload = ()=>ok(reader.result)
@@ -1824,64 +1855,62 @@ function arrayBufferToObjectUrl(buf) {
     const blob = new Blob([
         buf
     ], {
-        type: "application/octet-stream"
+        type: 'application/octet-stream'
     });
     return URL.createObjectURL(blob);
 }
 function arrayBufferToDownloadAnchor(buf, filename) {
-    const link = document.createElement("a");
-    link.href = arrayBufferToObjectUrl(buf);
-    link.download = filename;
-    link.style.display = "inline";
-    link.text = link.download;
-    return link;
+    const href = arrayBufferToObjectUrl(buf);
+    const download = filename;
+    return export_default1.createElement("a", {
+        href: href,
+        download: download
+    }, filename);
 }
-function Send({ sendTo , n  }) {
-    const pubKey = fullifyToJwk({
-        n
-    }, 'wrapKey');
-    const downloadRef = Le(null);
-    const [thumbp, setThumbp] = qe('');
-    xe(()=>{
-        thumbprint(pubKey).then(setThumbp);
-    });
+function Send({ sendTo , pub  }) {
+    const pubKey = fullifyToJwk(pub, 'wrapKey');
+    const [messages, setMessages] = qe([]);
     const fileEnc = je(async (e)=>{
         const file = e.target.files[0];
         if (!file) return;
         const filename = file.name + `.${sendTo}.encrypt`;
         const msgElem = await encryptFileAndGetResultNode(pubKey, file, filename);
-        downloadRef.current.insertAdjacentElement('afterbegin', msgElem);
+        setMessages([
+            msgElem,
+            ...messages
+        ]);
     }, [
-        downloadRef.current
+        messages
     ]);
     return export_default1.createElement("main", {
         id: "send"
-    }, export_default1.createElement("head", null, export_default1.createElement("title", null, sendTo, "宛暗号化ページ:NPAP")), export_default1.createElement("h1", null, "暗号化ページ"), export_default1.createElement("p", null, "鍵指紋: ", thumbp), export_default1.createElement("p", null, "このページから暗号化したファイルは、", name, "さんだけが開けます。"), export_default1.createElement("h2", null, "ファイルの暗号化"), export_default1.createElement("input", {
+    }, export_default1.createElement("head", null, export_default1.createElement("title", null, sendTo, "宛暗号化ページ:NPAP")), export_default1.createElement("h1", null, "暗号化ページ"), export_default1.createElement("p", null, "秘密鍵所有者: ", sendTo), export_default1.createElement("p", null, "このページから暗号化したファイルは、秘密鍵所有者だけが開けます。"), export_default1.createElement(Thumbprint, {
+        jwk: pubKey
+    }), export_default1.createElement("h2", null, "ファイルの暗号化"), export_default1.createElement("input", {
         type: "file",
         onChange: fileEnc
-    }), export_default1.createElement("div", {
-        ref: downloadRef
-    }));
+    }), messages);
 }
 function Receive({ receiveBy , secrets  }) {
     const privKey = fullifyToJwk(secrets, 'unwrapKey');
-    const downloadRef = Le(null);
-    const [thumbp, setThumbp] = qe('');
-    xe(()=>{
-        thumbprint(privKey).then(setThumbp);
-    });
+    const [messages, setMessages] = qe([]);
     const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(receiveBy)}&n=${privKey.n}`;
     const fileDec = je(async (e)=>{
         const file = e.target.files[0];
         if (!file) return;
         const msgElem = await decryptFileAndGetResultNode(privKey, file);
-        downloadRef.current.insertAdjacentElement('afterbegin', msgElem);
+        setMessages([
+            msgElem,
+            ...messages
+        ]);
     }, [
-        downloadRef.current
+        messages
     ]);
     return export_default1.createElement("main", {
         id: "receive"
-    }, export_default1.createElement("head", null, export_default1.createElement("title", null, receiveBy, "の秘密鍵ページ:NPAP")), export_default1.createElement("h1", null, "秘密鍵ページ"), export_default1.createElement("p", null, "所有者: ", receiveBy), export_default1.createElement("p", null, "鍵指紋: ", thumbp), export_default1.createElement("p", null, "このページはあなた専用のものです。", export_default1.createElement("br", null), "再生成は出来ませんので、 URL をブックマーク等に保存しておいてください。", export_default1.createElement("br", null), "URL には秘密鍵が含まれています。大切に保管し、誰かにメール等で送ることはしないでください。"), export_default1.createElement("h2", null, "「暗号化ページ」を送る"), export_default1.createElement("p", null, "以下のURLをメール等で送信者に送付してください。"), export_default1.createElement("input", {
+    }, export_default1.createElement("head", null, export_default1.createElement("title", null, receiveBy, "の秘密鍵ページ:NPAP")), export_default1.createElement("h1", null, "秘密鍵ページ"), export_default1.createElement("p", null, "所有者: ", receiveBy), export_default1.createElement(Thumbprint, {
+        jwk: privKey
+    }), export_default1.createElement("p", null, "このページはあなた専用のものです。", export_default1.createElement("br", null), "再生成は出来ませんので、 URL をブックマーク等に保存しておいてください。", export_default1.createElement("br", null), "URL には秘密鍵が含まれています。大切に保管し、誰かにメール等で送ることはしないでください。"), export_default1.createElement("h2", null, "「暗号化ページ」を送る"), export_default1.createElement("p", null, "以下のURLをメール等で送信者に送付してください。"), export_default1.createElement("input", {
         type: "text",
         value: sendPath,
         readOnly: true,
@@ -1895,28 +1924,17 @@ function Receive({ receiveBy , secrets  }) {
     }, "開いてみる"), export_default1.createElement("h2", null, "ファイルの復号"), export_default1.createElement("p", null, "「暗号化ページ」で暗号化されたファイルを受け取りましたら、以下から復号できます。"), export_default1.createElement("p", null, "処理はネットを介さず、あなたのマシン上で処理されます。"), export_default1.createElement("input", {
         type: "file",
         onChange: fileDec
-    }), export_default1.createElement("div", {
-        ref: downloadRef
-    }));
+    }), messages);
 }
-function cryptoAvailable() {
-    if (!crypto) return false;
-    if (!crypto.subtle) return false;
-    if (!crypto.subtle.generateKey) return false;
-    if (!crypto.subtle.encrypt) return false;
-    if (!crypto.subtle.decrypt) return false;
-    if (!crypto.subtle.wrapKey) return false;
-    if (!crypto.subtle.unwrapKey) return false;
-    return true;
-}
+const missing = missingFeature();
 function Npap() {
-    if (!cryptoAvailable()) {
-        return export_default1.createElement("p", null, "お使いのブラウザはNPAPに対応しておりません。セキュリティ確保のためにも最新のブラウザをご利用ください。");
+    if (missing) {
+        return export_default1.createElement("p", null, "お使いのブラウザはNPAPに対応しておりません。 セキュリティ確保のためにも最新のブラウザをご利用ください。", export_default1.createElement("br", null), "不足機能: ", missing);
     }
     const [hash, setHash] = qe(location.hash.substr(1));
     window.addEventListener('hashchange', ()=>setHash(location.hash.substr(1))
     , false);
-    const version = '1.0';
+    const version = '1.1';
     return export_default1.createElement("div", {
         id: "npap"
     }, export_default1.createElement(Pages, {
@@ -1931,10 +1949,13 @@ function Npap() {
 }
 function Pages({ urlString  }) {
     const params = Object.fromEntries(new URLSearchParams(urlString));
-    if (params.send_to) return export_default1.createElement(Send, {
-        sendTo: params.sendTo,
-        n: params.n
-    });
+    if (params.send_to) {
+        const { send_to , ...pub } = params;
+        return export_default1.createElement(Send, {
+            sendTo: send_to,
+            pub: pub
+        });
+    }
     if (params.receive_by) {
         const { receive_by , ...secrets } = params;
         return export_default1.createElement(Receive, {
@@ -2201,7 +2222,7 @@ var V1 = H1((se, A)=>{
     A.exports = $1();
 });
 var oe3 = J2(V1()), ie1 = J2(V1()), { unstable_now: ce1 , unstable_shouldYield: fe3 , unstable_forceFrameRate: be , unstable_IdlePriority: pe2 , unstable_ImmediatePriority: de2 , unstable_LowPriority: _e1 , unstable_NormalPriority: ye2 , unstable_Profiling: me2 , unstable_UserBlockingPriority: ve2 , unstable_cancelCallback: he2 , unstable_continueExecution: we2 , unstable_getCurrentPriorityLevel: ke1 , unstable_getFirstCallbackNode: ge2 , unstable_next: Pe1 , unstable_pauseExecution: xe2 , unstable_requestPaint: Te , unstable_runWithPriority: Ie1 , unstable_scheduleCallback: Me , unstable_wrapCallback: je1  } = oe3;
-var export_default7 = ie1.default;
+var export_default9 = ie1.default;
 var _s = Object.create;
 var Or = Object.defineProperty;
 var Ns = Object.getOwnPropertyDescriptor;
@@ -2235,7 +2256,7 @@ var Os = (e, n, t)=>{
 ;
 var Es = Ri((ie)=>{
     "use strict";
-    var _t = export_default1, M = export_default, U = export_default7;
+    var _t = export_default1, M = export_default, U = export_default9;
     function v(e) {
         for(var n = "https://reactjs.org/docs/error-decoder.html?invariant=" + e, t = 1; t < arguments.length; t++)n += "&args[]=" + encodeURIComponent(arguments[t]);
         return "Minified React error #" + e + "; visit " + n + " for the full message or use the non-minified dev environment for full errors and additional helpful warnings.";

@@ -1,6 +1,5 @@
-import { thumbprint } from "../lib/crypto.ts";
 import { fullifyToJwk } from '../lib/keys.ts'
-import { decryptFileAndGetResultNode } from '../lib/npapUtil.ts'
+import { decryptFileAndGetResultNode, Thumbprint } from '../lib/util.tsx'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function Receive ({
@@ -11,11 +10,7 @@ export default function Receive ({
   secrets: any
 }) {
   const privKey = fullifyToJwk(secrets, 'unwrapKey')
-  const downloadRef = useRef<HTMLDivElement>(null)
-  const [thumbp, setThumbp] = useState('')
-  useEffect(() => {
-    thumbprint(privKey).then(setThumbp)
-  })
+  const [messages, setMessages] = useState([] as JSX.Element[])
   const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(
     receiveBy
   )}&n=${privKey.n}`
@@ -24,9 +19,9 @@ export default function Receive ({
       const file = (e.target as HTMLInputElement).files![0]
       if (!file) return
       const msgElem = await decryptFileAndGetResultNode(privKey, file)
-      downloadRef.current!.insertAdjacentElement('afterbegin', msgElem)
+      setMessages([msgElem, ...messages])
     },
-    [downloadRef.current]
+    [messages]
   )
   return (
     <main id='receive'>
@@ -35,7 +30,7 @@ export default function Receive ({
       </head>
       <h1>秘密鍵ページ</h1>
       <p>所有者: {receiveBy}</p>
-      <p>鍵指紋: {thumbp}</p>
+      <Thumbprint jwk={privKey}/>
       <p>
         このページはあなた専用のものです。
         <br />
@@ -63,7 +58,7 @@ export default function Receive ({
       </p>
       <p>処理はネットを介さず、あなたのマシン上で処理されます。</p>
       <input type='file' onChange={fileDec} />
-      <div ref={downloadRef}></div>
+      {messages}
     </main>
   )
 }

@@ -26,6 +26,12 @@ header small {
   font-size: 1rem;
 }
 
+.thumbprint {
+  margin-left: 2rem;
+  margin-top: -1rem;
+  font-size: 60%;
+}
+
 footer {
   border-top: dotted 5px;
   border-color: var(--color1);

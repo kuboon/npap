@@ -1,6 +1,7 @@
 import { EncData } from "./types.ts";
 
 export function missingFeature() {
+  if (typeof Deno != 'undefined') return null;
   if (typeof crypto == "undefined") return "crypto";
   const { subtle } = crypto;
   if (!subtle) return "crypto.subtle";
@@ -96,10 +97,10 @@ export async function thumbprint(jwk: JsonWebKey) {
   const json = JSON.stringify({ e, kty, n });
   const ab = new TextEncoder().encode(json).buffer;
   const hash = await subtle.digest("SHA-256", ab);
-  const str = [...new Uint8Array(hash)].map((x) =>
+  const hexArray = [...new Uint8Array(hash)].map((x) =>
     ("0" + x.toString(16)).slice(-2)
-  ).join(":");
-  return str;
+  );
+  return hexArray;
 }
 
 async function aesEncrypt(key: CryptoKey, iv: Uint8Array, plain: ArrayBuffer) {
