@@ -4,13 +4,19 @@ const jwkBase: JsonWebKey = {
   ext: false,
   kty: "RSA",
 };
-const KeyEssence = ["d", "dp", "dq", "n", "p", "q", "qi"];
-//const PartialJwk = {[key of KeyEssence]: string}
+const KeyEssence = ["d", "dp", "dq", "n", "p", "q", "qi"] as const;
 
-export function minifyJwk(jwk: JsonWebKey) {
-  return Object.entries(jwk)
-    .filter(([k]) => KeyEssence.includes(k))
+const pick = <T extends keyof JsonWebKey>(jwk: JsonWebKey ,fields : readonly T[] ) => {
+  const ret = {} as JsonWebKey
+  for(const k of fields){
+    if(jwk[k]) ret[k] = jwk[k]
+  }
+  return ret as Pick<JsonWebKey, T>
 }
+export function minifyJwk(jwk: JsonWebKey) {
+  return pick(jwk, KeyEssence)
+}
+
 export function fullifyToJwk(obj: object, ops: 'wrapKey'|'unwrapKey') {
   return {
     key_ops: [ops],

@@ -66,7 +66,7 @@ export async function encryptByPublicKey(
     wrapperKey,
     "RSA-OAEP",
   );
-  return { key: new Uint8Array(key), iv, encrypted };
+  return { key: new Uint8Array(key), iv, encrypted: new Uint8Array(encrypted) };
 }
 
 export class UnwrapKeyError extends Error {}

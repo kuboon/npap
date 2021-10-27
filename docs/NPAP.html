@@ -57,7 +57,7 @@ async function encryptByPublicKey(wrapperKey, plain) {
     return {
         key: new Uint8Array(key),
         iv,
-        encrypted
+        encrypted: new Uint8Array(encrypted)
     };
 }
 class UnwrapKeyError extends Error {
@@ -113,9 +113,16 @@ const KeyEssence = [
     "q",
     "qi"
 ];
+const pick = (jwk, fields)=>{
+    const ret = {
+    };
+    for (const k of fields){
+        if (jwk[k]) ret[k] = jwk[k];
+    }
+    return ret;
+};
 function minifyJwk(jwk) {
-    return Object.entries(jwk).filter(([k])=>KeyEssence.includes(k)
-    );
+    return pick(jwk, KeyEssence);
 }
 function fullifyToJwk(obj, ops) {
     return {
