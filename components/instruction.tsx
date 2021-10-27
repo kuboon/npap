@@ -1,13 +1,16 @@
+import { minifyJwk } from '../lib/keys.ts'
+import { generateJwkPair } from '../lib/crypto.ts'
 import React, { useRef } from 'react'
-import { generateSerializedPrivateKey } from '../lib/keys.ts'
 
 export default function Instruction () {
   const inputRef = useRef<HTMLInputElement>(null)
   const generate = () => {
     const name = inputRef.current!.value
     if (name.length == 0) return
-    generateSerializedPrivateKey().then(key => {
-      location.hash = `receive_by=${name}&${key}`
+    generateJwkPair().then(keyPair => {
+      const obj = { receive_by: name, ...minifyJwk(keyPair.privateKey) }
+      const urlParam = new URLSearchParams(obj)
+      location.hash = urlParam.toString()
     })
   }
   return (
@@ -49,8 +52,14 @@ export default function Instruction () {
       </p>
       <p>
         NPAP
-        の秘密鍵はURLの「#」以降のハッシュ文字列と呼ばれる部分に格納してあります。ブラウザはこの情報をどこにも送りませんので、NPAP
+        の秘密鍵はURLの「#」以降のハッシュ文字列と呼ばれる部分に格納してあります。
+        ブラウザはこの情報をどこにも送りませんので、NPAP
         のサーバーにさえ秘密鍵は送信されません。
+      </p>
+      <h2>鍵指紋とは</h2>
+      <p>
+        「秘密鍵ページ」から取得できる「暗号化ページ」には、同じ鍵指紋が表示されます。
+        両者の鍵指紋を検証することで、対応しているペアかどうかを確認できます。
       </p>
     </main>
   )
