@@ -16,6 +16,8 @@ export default function App ({
         <link rel='stylesheet' href='/style/index.css' />
         <meta name='viewport' content='width=device-width' />
         <link rel="icon" href={svgDataUri} type="image/svg+xml"></link>
+        <meta property="og:title" content="NPAP: No Password All Protected" />
+        <meta property="og:description" content="パスワード不要！ 暗号鍵が埋め込まれたURLをブックマークしておくだけ" />
       </head>
       <header>
         <span>
