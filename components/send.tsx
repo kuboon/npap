@@ -1,56 +1,29 @@
-import Logo from '~/components/logo.tsx'
-import { encAndWrap, thumbprint } from '../lib/crypto.ts'
-import { deserealizePublicKey } from '../lib/keys.ts'
-import React, { useEffect, useRef, useState } from 'react'
-import { encode } from 'msgpack'
+import { thumbprint } from '../lib/crypto.ts'
+import { fullifyToJwk } from '../lib/keys.ts'
+import { encryptFileAndGetResultNode } from '../lib/npapUtil.ts'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-async function encrypt (n: string, plain: ArrayBuffer) {
-  const pKey = await deserealizePublicKey(n)
-  const { iv, key, ciphered } = await encAndWrap(pKey, plain)
-  const msg = encode({
-    iv,
-    key: new Uint8Array(key),
-    ciphered: new Uint8Array(ciphered)
-  })
-  return msg
-}
-const blobs: Blob[] = []
-export default function Send () {
+export default function Send ({ sendTo, n }: { sendTo: string; n: string }) {
+  const pubKey = fullifyToJwk({ n }, 'wrapKey')
   const downloadRef = useRef<HTMLDivElement>(null)
-  const hash = typeof location === 'object' && location.hash.substring(1)
-  if (!hash) return <p>no hash</p>
   const [thumbp, setThumbp] = useState('')
-  const params = new URLSearchParams(hash)
-  const name = params.get('send_to')
-  const pub = params.get('n')!
   useEffect(() => {
-    thumbprint(pub).then(setThumbp)
+    thumbprint(pubKey).then(setThumbp)
   })
-  async function fileEnc (e: React.ChangeEvent) {
-    const file = (e.target as any).files[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = async function () {
-      const buf = reader.result
-      if (!buf || typeof buf == 'string') return
-      const enc = await encrypt(pub, buf)
-      if (!enc) return
-      const blob = new Blob([enc], { type: 'application/octet-stream' })
-      blobs.push(blob)
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blobs[0])
-      link.download = file.name + `.${name}.encrypt`
-      link.style.display = 'inline'
-      link.text = link.download
-      downloadRef.current!.insertAdjacentHTML('afterbegin', '<br />')
-      downloadRef.current!.insertAdjacentElement('afterbegin', link)
-    }
-    reader.readAsArrayBuffer(file)
-  }
+  const fileEnc = useCallback(
+    async (e: React.ChangeEvent) => {
+      const file = (e.target as any).files[0]
+      if (!file) return
+      const filename = file.name + `.${sendTo}.encrypt`
+      const msgElem = await encryptFileAndGetResultNode(pubKey, file, filename)
+      downloadRef.current!.insertAdjacentElement('afterbegin', msgElem)
+    },
+    [downloadRef.current]
+  )
   return (
     <main id='send'>
       <head>
-        <title>{name}宛暗号化ページ:NPAP</title>
+        <title>{sendTo}宛暗号化ページ:NPAP</title>
       </head>
       <h1>暗号化ページ</h1>
       <p>鍵指紋: {thumbp}</p>

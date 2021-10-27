@@ -1,3 +1,119 @@
+const jwkBase = {
+    alg: "RSA-OAEP-256",
+    e: "AQAB",
+    ext: false,
+    kty: "RSA"
+};
+const KeyEssence = [
+    "d",
+    "dp",
+    "dq",
+    "n",
+    "p",
+    "q",
+    "qi"
+];
+function minifyJwk(jwk) {
+    return Object.entries(jwk).filter(([k])=>KeyEssence.includes(k)
+    );
+}
+function fullifyToJwk(obj, ops) {
+    return {
+        key_ops: [
+            ops
+        ],
+        ...jwkBase,
+        ...obj
+    };
+}
+const subtle = window.crypto?.subtle;
+const RSAalgorithm = {
+    name: "RSA-OAEP",
+    hash: {
+        name: "SHA-256"
+    }
+};
+async function generateJwkPair() {
+    const keyPair = await subtle.generateKey({
+        modulusLength: 4096,
+        publicExponent: new Uint8Array([
+            1,
+            0,
+            1
+        ]),
+        ...RSAalgorithm
+    }, true, [
+        "wrapKey",
+        "unwrapKey"
+    ]);
+    const publicKey = await subtle.exportKey("jwk", keyPair.publicKey);
+    const privateKey = await subtle.exportKey("jwk", keyPair.privateKey);
+    return {
+        publicKey,
+        privateKey
+    };
+}
+async function encryptByPublicJwk(jwk, plain) {
+    const wrapperKey = await subtle.importKey("jwk", jwk, RSAalgorithm, false, [
+        "wrapKey"
+    ]);
+    const aeskey = await subtle.generateKey({
+        name: "AES-CBC",
+        length: 256
+    }, true, [
+        "encrypt",
+        "decrypt"
+    ]);
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    const encrypted = await aesEncrypt(aeskey, iv, plain);
+    const key = await subtle.wrapKey("raw", aeskey, wrapperKey, "RSA-OAEP");
+    return {
+        key: new Uint8Array(key),
+        iv,
+        encrypted
+    };
+}
+class UnwrapKeyError extends Error {
+}
+async function decryptByPrivateJwk(privKey, data) {
+    const unwrapperKey = await subtle.importKey("jwk", privKey, RSAalgorithm, false, [
+        "unwrapKey"
+    ]);
+    const { key , iv , encrypted  } = data;
+    const aeskey = await subtle.unwrapKey("raw", key, unwrapperKey, "RSA-OAEP", "AES-CBC", false, [
+        "decrypt"
+    ]).catch((e)=>{
+        throw new UnwrapKeyError();
+    });
+    return aesDecrypt(aeskey, iv, encrypted);
+}
+async function thumbprint(jwk) {
+    const { e , kty , n  } = jwk;
+    const json = JSON.stringify({
+        e,
+        kty,
+        n
+    });
+    const ab = new TextEncoder().encode(json).buffer;
+    const hash = await subtle.digest("SHA-256", ab);
+    const str = [
+        ...new Uint8Array(hash)
+    ].map((x)=>("0" + x.toString(16)).slice(-2)
+    ).join(":");
+    return str;
+}
+async function aesEncrypt(key, iv, plain) {
+    return subtle.encrypt({
+        name: "AES-CBC",
+        iv
+    }, key, plain);
+}
+async function aesDecrypt(key, iv, encrypted) {
+    return await subtle.decrypt({
+        name: "AES-CBC",
+        iv
+    }, key, encrypted);
+}
 var b = Object.create;
 var s = Object.defineProperty;
 var p = Object.getOwnPropertyDescriptor;
@@ -410,86 +526,18 @@ var g1 = j1((se, H)=>{
 });
 var oe = O1(g1()), ue = O1(g1()), { Fragment: fe , StrictMode: le , Profiler: pe , Suspense: ae , Children: ye , Component: de , PureComponent: _e , __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: ve , cloneElement: me , createContext: he , createElement: Ee , createFactory: Se , createRef: Ce , forwardRef: Re , isValidElement: ke , lazy: $e , memo: ge , useCallback: je , useContext: Oe , useDebugValue: Pe , useEffect: xe , useImperativeHandle: Ie , useLayoutEffect: we , useMemo: Ae , useReducer: Fe , useRef: Le , useState: qe , version: De  } = oe;
 var export_default1 = ue.default;
-const { subtle  } = crypto;
-const algorithm = {
-    name: "RSA-OAEP",
-    hash: {
-        name: "SHA-256"
-    }
-};
-const jwkBase = {
-    alg: "RSA-OAEP-256",
-    e: "AQAB",
-    ext: false,
-    kty: "RSA"
-};
-const KeyEssence = [
-    "d",
-    "dp",
-    "dq",
-    "n",
-    "p",
-    "q",
-    "qi"
-];
-async function generateSerializedPrivateKey() {
-    const keyPair = await generateRsaKeyPair();
-    return serializePrivateKey(keyPair.privateKey);
-}
-async function serializePrivateKey(key) {
-    const jwk = await subtle.exportKey("jwk", key);
-    console.log(jwk.k, jwk.kty);
-    const p = new URLSearchParams();
-    Object.entries(jwk).filter(([k])=>KeyEssence.includes(k)
-    ).forEach(([k, v])=>p.append(k, v)
-    );
-    return p.toString();
-}
-async function deserealizePrivateKey(obj) {
-    const jwk = {
-        key_ops: [
-            "unwrapKey"
-        ],
-        ...jwkBase,
-        ...obj
-    };
-    return subtle.importKey("jwk", jwk, algorithm, false, [
-        "unwrapKey"
-    ]);
-}
-async function deserealizePublicKey(n) {
-    const jwk = {
-        key_ops: [
-            "wrapKey"
-        ],
-        n,
-        ...jwkBase
-    };
-    return subtle.importKey("jwk", jwk, algorithm, false, [
-        "wrapKey"
-    ]);
-}
-async function generateRsaKeyPair() {
-    return subtle.generateKey({
-        modulusLength: 4096,
-        publicExponent: new Uint8Array([
-            1,
-            0,
-            1
-        ]),
-        ...algorithm
-    }, true, [
-        "wrapKey",
-        "unwrapKey"
-    ]);
-}
 function Instruction() {
     const inputRef = Le(null);
     const generate = ()=>{
         const name = inputRef.current.value;
         if (name.length == 0) return;
-        generateSerializedPrivateKey().then((key)=>{
-            location.hash = `receive_by=${name}&${key}`;
+        generateJwkPair().then((keyPair)=>{
+            const obj = {
+                receive_by: name,
+                ...minifyJwk(keyPair.privateKey)
+            };
+            const urlParam = new URLSearchParams(obj);
+            location.hash = urlParam.toString();
         });
     };
     return export_default1.createElement("main", {
@@ -500,63 +548,7 @@ function Instruction() {
         required: true
     }), export_default1.createElement("br", null), export_default1.createElement("button", {
         onClick: generate
-    }, "「秘密鍵ページ」を作成")), export_default1.createElement("h2", null, "使い方"), export_default1.createElement("p", null, "ファイルの受信者は、あらかじめ自分専用の「秘密鍵ページ」を作成し、お手元にブックマークを保存していつでも開けるようにしておきます。"), export_default1.createElement("p", null, "「秘密鍵ページ」から「暗号化ページ」のURLが取得できるので、それをメールで相手に送ります。"), export_default1.createElement("p", null, "ファイルの送信者は、「暗号化ページ」を開き、送りたいファイルを指定します。ファイルはどこへも送信されることなく、ブラウザ内で暗号化され、ダウンロードできます。"), export_default1.createElement("p", null, "ファイルの送信者は、暗号化されたファイルをメールに添付して送ります。"), export_default1.createElement("p", null, "ファイルの受信者は、暗号化されたファイルを受け取ったら「秘密鍵ページ」から元のファイルへ復号できます。"), export_default1.createElement("h2", null, "なぜ安全なの？"), export_default1.createElement("p", null, "公開鍵方式という暗号を使っています。「暗号化ページ」で暗号化されたファイルは、「秘密鍵ページ」のブックマークを知っている人のみが復号できます。"), export_default1.createElement("p", null, "「秘密鍵ページ」は受信者の手元にあればよく、送信者には必要ありません。つまり、復号に必要な情報は一切ネットに流出しません。"), export_default1.createElement("p", null, "NPAP の秘密鍵はURLの「#」以降のハッシュ文字列と呼ばれる部分に格納してあります。ブラウザはこの情報をどこにも送りませんので、NPAP のサーバーにさえ秘密鍵は送信されません。"));
-}
-const { subtle: subtle1  } = crypto;
-async function aesEncrypt(key, iv, plain) {
-    const ciphertext = await subtle1.encrypt({
-        name: "AES-CBC",
-        iv
-    }, key, plain);
-    return ciphertext;
-}
-async function aesDecrypt(key, iv, encrypted) {
-    return subtle1.decrypt({
-        name: "AES-CBC",
-        iv
-    }, key, encrypted);
-}
-async function encAndWrap(wrapperKey, plain) {
-    const aeskey = await subtle1.generateKey({
-        name: "AES-CBC",
-        length: 256
-    }, true, [
-        "encrypt",
-        "decrypt"
-    ]);
-    const iv = crypto.getRandomValues(new Uint8Array(16));
-    const ciphered = await aesEncrypt(aeskey, iv, plain);
-    const key = await subtle1.wrapKey("raw", aeskey, wrapperKey, "RSA-OAEP");
-    return {
-        key,
-        iv,
-        ciphered
-    };
-}
-class UnwrapKeyError extends Error {
-}
-async function unwrapAndDec(unwrapperKey, data) {
-    const { key , iv , ciphered  } = data;
-    const aeskey = await subtle1.unwrapKey("raw", key, unwrapperKey, "RSA-OAEP", "AES-CBC", false, [
-        "decrypt"
-    ]).catch((e)=>{
-        throw new UnwrapKeyError();
-    });
-    return aesDecrypt(aeskey, iv, ciphered);
-}
-async function thumbprint(n) {
-    const json = JSON.stringify({
-        e: 'AQAB',
-        kty: 'RSA',
-        n
-    });
-    const ab = new TextEncoder().encode(json).buffer;
-    const hash = await subtle1.digest("SHA-256", ab);
-    const str = [
-        ...new Uint8Array(hash)
-    ].map((x)=>("0" + x.toString(16)).slice(-2)
-    ).join(":");
-    return str;
+    }, "「秘密鍵ページ」を作成")), export_default1.createElement("h2", null, "使い方"), export_default1.createElement("p", null, "ファイルの受信者は、あらかじめ自分専用の「秘密鍵ページ」を作成し、お手元にブックマークを保存していつでも開けるようにしておきます。"), export_default1.createElement("p", null, "「秘密鍵ページ」から「暗号化ページ」のURLが取得できるので、それをメールで相手に送ります。"), export_default1.createElement("p", null, "ファイルの送信者は、「暗号化ページ」を開き、送りたいファイルを指定します。ファイルはどこへも送信されることなく、ブラウザ内で暗号化され、ダウンロードできます。"), export_default1.createElement("p", null, "ファイルの送信者は、暗号化されたファイルをメールに添付して送ります。"), export_default1.createElement("p", null, "ファイルの受信者は、暗号化されたファイルを受け取ったら「秘密鍵ページ」から元のファイルへ復号できます。"), export_default1.createElement("h2", null, "なぜ安全なの？"), export_default1.createElement("p", null, "公開鍵方式という暗号を使っています。「暗号化ページ」で暗号化されたファイルは、「秘密鍵ページ」のブックマークを知っている人のみが復号できます。"), export_default1.createElement("p", null, "「秘密鍵ページ」は受信者の手元にあればよく、送信者には必要ありません。つまり、復号に必要な情報は一切ネットに流出しません。"), export_default1.createElement("p", null, "NPAP の秘密鍵はURLの「#」以降のハッシュ文字列と呼ばれる部分に格納してあります。 ブラウザはこの情報をどこにも送りませんので、NPAP のサーバーにさえ秘密鍵は送信されません。"), export_default1.createElement("h2", null, "鍵指紋とは"), export_default1.createElement("p", null, "「秘密鍵ページ」から取得できる「暗号化ページ」には、同じ鍵指紋が表示されます。 両者の鍵指紋を検証することで、対応しているペアかどうかを確認できます。"));
 }
 var process = window.process = {
 };
@@ -1768,118 +1760,128 @@ function ge1(i, e) {
 var T = function(i) {
     return this instanceof T ? (this.v = i, this) : new T(i);
 };
-async function encrypt(n, plain) {
-    const pKey = await deserealizePublicKey(n);
-    const { iv , key , ciphered  } = await encAndWrap(pKey, plain);
-    const msg = de1({
-        iv,
-        key: new Uint8Array(key),
-        ciphered: new Uint8Array(ciphered)
-    });
-    return msg;
+class CryptoPackError extends Error {
 }
-const blobs = [];
-function Send() {
-    const downloadRef = Le(null);
-    const hash = typeof location === 'object' && location.hash.substring(1);
-    if (!hash) return export_default1.createElement("p", null, "no hash");
-    const [thumbp, setThumbp] = qe('');
-    const params = new URLSearchParams(hash);
-    const name = params.get('send_to');
-    const pub = params.get('n');
-    xe(()=>{
-        thumbprint(pub).then(setThumbp);
+async function encryptBuffer(jwk, plain) {
+    return encryptByPublicJwk(jwk, plain).then(de1).catch((e)=>{
+        console.error(e);
+        const msg = "不明な復号エラーが発生: " + e.message;
+        throw new CryptoPackError(msg, e);
     });
-    async function fileEnc(e) {
+}
+async function decryptBuffer(jwk, encoded) {
+    const data = ge1(encoded);
+    return decryptByPrivateJwk(jwk, data).catch((e)=>{
+        let msg;
+        if (e instanceof RangeError) {
+            msg = "暗号化ファイルではありません";
+        }
+        if (e instanceof UnwrapKeyError) {
+            msg = "鍵が整合しません。暗号化ページと秘密鍵ページが対応しているかご確認ください。";
+        } else {
+            console.error(e);
+            msg = "不明な復号エラーが発生: " + e.message;
+        }
+        throw new CryptoPackError(msg, e);
+    });
+}
+async function encryptFileAndGetResultNode(jwk, file, filename) {
+    const plain = await readAsArrayBuffer(file);
+    const retElem = document.createElement("p");
+    return encryptBuffer(jwk, plain).then((encoded)=>{
+        const a = arrayBufferToDownloadAnchor(encoded, filename);
+        retElem.insertAdjacentElement("afterbegin", a);
+        return retElem;
+    }).catch((err)=>{
+        let msg = file.name + ": " + err.message;
+        retElem.insertAdjacentText("afterbegin", msg);
+        return retElem;
+    });
+}
+async function decryptFileAndGetResultNode(jwk, file) {
+    const encoded = await readAsArrayBuffer(file);
+    const retElem = document.createElement("p");
+    return decryptBuffer(jwk, encoded).then((plain)=>{
+        const filename = file.name.split(".").slice(0, -2).join(".");
+        const a = arrayBufferToDownloadAnchor(plain, filename);
+        retElem.insertAdjacentElement("afterbegin", a);
+        return retElem;
+    }).catch((err)=>{
+        let msg = file.name + ": " + err.message;
+        retElem.insertAdjacentText("afterbegin", msg);
+        return retElem;
+    });
+}
+const readAsArrayBuffer = async (file)=>new Promise((ok, ng)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>ok(reader.result)
+        ;
+        reader.onerror = ng;
+        reader.readAsArrayBuffer(file);
+    })
+;
+function arrayBufferToObjectUrl(buf) {
+    const blob = new Blob([
+        buf
+    ], {
+        type: "application/octet-stream"
+    });
+    return URL.createObjectURL(blob);
+}
+function arrayBufferToDownloadAnchor(buf, filename) {
+    const link = document.createElement("a");
+    link.href = arrayBufferToObjectUrl(buf);
+    link.download = filename;
+    link.style.display = "inline";
+    link.text = link.download;
+    return link;
+}
+function Send({ sendTo , n  }) {
+    const pubKey = fullifyToJwk({
+        n
+    }, 'wrapKey');
+    const downloadRef = Le(null);
+    const [thumbp, setThumbp] = qe('');
+    xe(()=>{
+        thumbprint(pubKey).then(setThumbp);
+    });
+    const fileEnc = je(async (e)=>{
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const buf = reader.result;
-            if (!buf || typeof buf == 'string') return;
-            const enc = await encrypt(pub, buf);
-            if (!enc) return;
-            const blob = new Blob([
-                enc
-            ], {
-                type: 'application/octet-stream'
-            });
-            blobs.push(blob);
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blobs[0]);
-            link.download = file.name + `.${name}.encrypt`;
-            link.style.display = 'inline';
-            link.text = link.download;
-            downloadRef.current.insertAdjacentHTML('afterbegin', '<br />');
-            downloadRef.current.insertAdjacentElement('afterbegin', link);
-        };
-        reader.readAsArrayBuffer(file);
-    }
+        const filename = file.name + `.${sendTo}.encrypt`;
+        const msgElem = await encryptFileAndGetResultNode(pubKey, file, filename);
+        downloadRef.current.insertAdjacentElement('afterbegin', msgElem);
+    }, [
+        downloadRef.current
+    ]);
     return export_default1.createElement("main", {
         id: "send"
-    }, export_default1.createElement("head", null, export_default1.createElement("title", null, name, "宛暗号化ページ:NPAP")), export_default1.createElement("h1", null, "暗号化ページ"), export_default1.createElement("p", null, "thumbprint: ", thumbp), export_default1.createElement("p", null, "このページから暗号化したファイルは、", name, "さんだけが開けます。"), export_default1.createElement("h2", null, "ファイルの暗号化"), export_default1.createElement("input", {
+    }, export_default1.createElement("head", null, export_default1.createElement("title", null, sendTo, "宛暗号化ページ:NPAP")), export_default1.createElement("h1", null, "暗号化ページ"), export_default1.createElement("p", null, "鍵指紋: ", thumbp), export_default1.createElement("p", null, "このページから暗号化したファイルは、", name, "さんだけが開けます。"), export_default1.createElement("h2", null, "ファイルの暗号化"), export_default1.createElement("input", {
         type: "file",
         onChange: fileEnc
     }), export_default1.createElement("div", {
         ref: downloadRef
     }));
 }
-async function decrypt(secret, msg) {
-    const key = await deserealizePrivateKey(secret);
-    const data = ge1(msg);
-    return unwrapAndDec(key, data);
-}
-function Receive() {
+function Receive({ receiveBy , secrets  }) {
+    const privKey = fullifyToJwk(secrets, 'unwrapKey');
     const downloadRef = Le(null);
-    const hash = typeof location === 'object' && location.hash.substring(1);
-    if (!hash) return export_default1.createElement("p", null, "no hash");
     const [thumbp, setThumbp] = qe('');
-    const params = Object.fromEntries(new URLSearchParams(hash));
-    const { receive_by , ...secret } = params;
-    const { n  } = secret;
-    const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(receive_by)}&n=${n}`;
     xe(()=>{
-        thumbprint(n).then(setThumbp);
+        thumbprint(privKey).then(setThumbp);
     });
+    const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(receiveBy)}&n=${privKey.n}`;
     const fileDec = je(async (e)=>{
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const buf = reader.result;
-            try {
-                const enc = await decrypt(secret, buf);
-                const blob = new Blob([
-                    enc
-                ], {
-                    type: 'application/octet-stream'
-                });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = file.name.split('.').slice(0, -2).join('.');
-                link.text = link.download;
-                downloadRef.current.insertAdjacentElement('afterbegin', link);
-            } catch (e) {
-                let msg = file.name + ': ';
-                if (e instanceof RangeError) {
-                    msg += '暗号化ファイルではありません';
-                }
-                if (e instanceof UnwrapKeyError) {
-                    msg += '鍵が整合しません。暗号化ページと秘密鍵ページが対応しているかご確認ください。';
-                } else {
-                    console.error(e);
-                    msg += '不明な復号エラーです';
-                }
-                downloadRef.current.insertAdjacentHTML('afterbegin', `<p>${msg}</p>`);
-            }
-        };
-        reader.readAsArrayBuffer(file);
+        const msgElem = await decryptFileAndGetResultNode(privKey, file);
+        downloadRef.current.insertAdjacentElement('afterbegin', msgElem);
     }, [
         downloadRef.current
     ]);
     return export_default1.createElement("main", {
         id: "receive"
-    }, export_default1.createElement("head", null, export_default1.createElement("title", null, receive_by, "の秘密鍵ページ:NPAP")), export_default1.createElement("h1", null, "秘密鍵ページ"), export_default1.createElement("p", null, "所有者: ", receive_by), export_default1.createElement("p", null, "thumbprint: ", thumbp), export_default1.createElement("p", null, "このページはあなた専用のものです。", export_default1.createElement("br", null), "再生成は出来ませんので、 URL をブックマーク等に保存しておいてください。", export_default1.createElement("br", null), "URL には秘密鍵が含まれています。大切に保管し、誰かにメール等で送ることはしないでください。"), export_default1.createElement("h2", null, "「暗号化ページ」を送る"), export_default1.createElement("p", null, "以下のURLをメール等で送信者に送付してください。"), export_default1.createElement("input", {
+    }, export_default1.createElement("head", null, export_default1.createElement("title", null, receiveBy, "の秘密鍵ページ:NPAP")), export_default1.createElement("h1", null, "秘密鍵ページ"), export_default1.createElement("p", null, "所有者: ", receiveBy), export_default1.createElement("p", null, "鍵指紋: ", thumbp), export_default1.createElement("p", null, "このページはあなた専用のものです。", export_default1.createElement("br", null), "再生成は出来ませんので、 URL をブックマーク等に保存しておいてください。", export_default1.createElement("br", null), "URL には秘密鍵が含まれています。大切に保管し、誰かにメール等で送ることはしないでください。"), export_default1.createElement("h2", null, "「暗号化ページ」を送る"), export_default1.createElement("p", null, "以下のURLをメール等で送信者に送付してください。"), export_default1.createElement("input", {
         type: "text",
         value: sendPath,
         readOnly: true,
@@ -1911,15 +1913,14 @@ function Npap() {
     if (!cryptoAvailable()) {
         return export_default1.createElement("p", null, "お使いのブラウザはNPAPに対応しておりません。セキュリティ確保のためにも最新のブラウザをご利用ください。");
     }
-    const [hash, setHash] = qe(location.hash);
-    window.addEventListener('hashchange', function() {
-        setHash(location.hash);
-    }, false);
+    const [hash, setHash] = qe(location.hash.substr(1));
+    window.addEventListener('hashchange', ()=>setHash(location.hash.substr(1))
+    , false);
     const version = '1.0';
     return export_default1.createElement("div", {
         id: "npap"
     }, export_default1.createElement(Pages, {
-        cmd: hash
+        urlString: hash
     }), export_default1.createElement("footer", null, export_default1.createElement("a", {
         href: "#",
         target: "_blank"
@@ -1928,10 +1929,20 @@ function Npap() {
         target: "_blank"
     }, "NPAP Top"), export_default1.createElement("span", null, "Version ", version)));
 }
-function Pages({ cmd  }) {
-    if (cmd.startsWith('#send_to')) return export_default1.createElement(Send, null);
-    else if (cmd.startsWith('#receive_by')) return export_default1.createElement(Receive, null);
-    else return export_default1.createElement(Instruction, null);
+function Pages({ urlString  }) {
+    const params = Object.fromEntries(new URLSearchParams(urlString));
+    if (params.send_to) return export_default1.createElement(Send, {
+        sendTo: params.sendTo,
+        n: params.n
+    });
+    if (params.receive_by) {
+        const { receive_by , ...secrets } = params;
+        return export_default1.createElement(Receive, {
+            receiveBy: receive_by,
+            secrets: secrets
+        });
+    }
+    return export_default1.createElement(Instruction, null);
 }
 var D1 = Object.create;
 var j3 = Object.defineProperty;

@@ -1,13 +1,16 @@
+import { minifyJwk } from '../lib/keys.ts'
+import { generateJwkPair } from '../lib/crypto.ts'
 import React, { useRef } from 'react'
-import { generateSerializedPrivateKey } from '../lib/keys.ts'
 
 export default function Instruction () {
   const inputRef = useRef<HTMLInputElement>(null)
   const generate = () => {
     const name = inputRef.current!.value
     if (name.length == 0) return
-    generateSerializedPrivateKey().then(key => {
-      location.hash = `receive_by=${name}&${key}`
+    generateJwkPair().then(keyPair => {
+      const obj = { receive_by: name, ...minifyJwk(keyPair.privateKey) }
+      const urlParam = new URLSearchParams(obj)
+      location.hash = urlParam.toString()
     })
   }
   return (

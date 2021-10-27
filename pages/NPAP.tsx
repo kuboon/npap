@@ -22,19 +22,17 @@ export default function Npap () {
       </p>
     )
   }
-  const [hash, setHash] = useState(location.hash)
+  const [hash, setHash] = useState(location.hash.substr(1))
   window.addEventListener(
     'hashchange',
-    function () {
-      setHash(location.hash)
-    },
+    () => setHash(location.hash.substr(1)),
     false
   )
   const version = '1.0'
 
   return (
     <div id='npap'>
-      <Pages cmd={hash} />
+      <Pages urlString={hash} />
       <footer>
         <a href='#' target='_blank'>
           鍵生成ページ
@@ -48,8 +46,12 @@ export default function Npap () {
   )
 }
 
-function Pages ({ cmd }: { cmd: string }) {
-  if (cmd.startsWith('#send_to')) return <Send />
-  else if (cmd.startsWith('#receive_by')) return <Receive />
-  else return <Instruction />
+function Pages ({ urlString }: { urlString: string }) {
+  const params = Object.fromEntries(new URLSearchParams(urlString))
+  if (params.send_to) return <Send sendTo={params.sendTo} n={params.n} />
+  if (params.receive_by){
+    const {receive_by, ...secrets} = params
+    return <Receive receiveBy={receive_by} secrets={secrets} />
+  } 
+  return <Instruction />
 }

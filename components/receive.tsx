@@ -1,72 +1,40 @@
-import { thumbprint, unwrapAndDec, UnwrapKeyError } from '../lib/crypto.ts'
-import { deserealizePrivateKey } from '../lib/keys.ts'
+import { thumbprint } from "../lib/crypto.ts";
+import { fullifyToJwk } from '../lib/keys.ts'
+import { decryptFileAndGetResultNode } from '../lib/npapUtil.ts'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { decode } from 'msgpack'
-import { EncData } from '../lib/types.ts'
 
-async function decrypt (secret: any, msg: ArrayBuffer) {
-  const key = await deserealizePrivateKey(secret)
-  const data = decode(msg) as EncData
-  return unwrapAndDec(key, data)
-}
-export default function Receive () {
+export default function Receive ({
+  receiveBy,
+  secrets
+}: {
+  receiveBy: string
+  secrets: any
+}) {
+  const privKey = fullifyToJwk(secrets, 'unwrapKey')
   const downloadRef = useRef<HTMLDivElement>(null)
-  const hash = typeof location === 'object' && location.hash.substring(1)
-  if (!hash) return <p>no hash</p>
   const [thumbp, setThumbp] = useState('')
-  const params = Object.fromEntries(new URLSearchParams(hash))
-  const { receive_by, ...secret } = params
-  const { n } = secret
-  const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(
-    receive_by
-  )}&n=${n}`
   useEffect(() => {
-    thumbprint(n).then(setThumbp)
+    thumbprint(privKey).then(setThumbp)
   })
+  const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(
+    receiveBy
+  )}&n=${privKey.n}`
   const fileDec = useCallback(
     async (e: React.ChangeEvent) => {
       const file = (e.target as HTMLInputElement).files![0]
       if (!file) return
-      const reader = new FileReader()
-      reader.onload = async function () {
-        const buf = reader.result as ArrayBuffer
-        try {
-          const enc = await decrypt(secret, buf)
-          const blob = new Blob([enc], { type: 'application/octet-stream' })
-          const link = document.createElement('a')
-          link.href = URL.createObjectURL(blob)
-          link.download = file.name
-            .split('.')
-            .slice(0, -2)
-            .join('.')
-          link.text = link.download
-          downloadRef.current!.insertAdjacentElement('afterbegin', link)
-        } catch (e) {
-          let msg = file.name + ': '
-          if (e instanceof RangeError) {
-            msg += '暗号化ファイルではありません'
-          }
-          if (e instanceof UnwrapKeyError) {
-            msg +=
-              '鍵が整合しません。暗号化ページと秘密鍵ページが対応しているかご確認ください。'
-          } else {
-            console.error(e)
-            msg += '不明な復号エラーです'
-          }
-          downloadRef.current!.insertAdjacentHTML('afterbegin', `<p>${msg}</p>`)
-        }
-      }
-      reader.readAsArrayBuffer(file)
+      const msgElem = await decryptFileAndGetResultNode(privKey, file)
+      downloadRef.current!.insertAdjacentElement('afterbegin', msgElem)
     },
     [downloadRef.current]
   )
   return (
     <main id='receive'>
       <head>
-        <title>{receive_by}の秘密鍵ページ:NPAP</title>
+        <title>{receiveBy}の秘密鍵ページ:NPAP</title>
       </head>
       <h1>秘密鍵ページ</h1>
-      <p>所有者: {receive_by}</p>
+      <p>所有者: {receiveBy}</p>
       <p>鍵指紋: {thumbp}</p>
       <p>
         このページはあなた専用のものです。
