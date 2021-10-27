@@ -1,5 +1,5 @@
 function missingFeature() {
-    if (typeof Deno != 'undefined') return null;
+    if (typeof Deno != "undefined") return null;
     if (typeof crypto == "undefined") return "crypto";
     const { subtle  } = crypto;
     if (!subtle) return "crypto.subtle";
@@ -40,10 +40,10 @@ async function generateJwkPair() {
         privateKey
     };
 }
-async function encryptByPublicJwk(jwk, plain) {
-    const wrapperKey = await subtle.importKey("jwk", jwk, RSAalgorithm, false, [
-        "wrapKey"
-    ]);
+function importKey(jwk) {
+    return subtle.importKey("jwk", jwk, RSAalgorithm, false, jwk.key_ops);
+}
+async function encryptByPublicKey(wrapperKey, plain) {
     const aeskey = await subtle.generateKey({
         name: "AES-CBC",
         length: 256
@@ -62,12 +62,9 @@ async function encryptByPublicJwk(jwk, plain) {
 }
 class UnwrapKeyError extends Error {
 }
-async function decryptByPrivateJwk(privKey, data) {
-    const unwrapperKey = await subtle.importKey("jwk", privKey, RSAalgorithm, false, [
-        "unwrapKey"
-    ]);
+async function decryptByPrivateKey(privKey, data) {
     const { key , iv , encrypted  } = data;
-    const aeskey = await subtle.unwrapKey("raw", key, unwrapperKey, "RSA-OAEP", "AES-CBC", false, [
+    const aeskey = await subtle.unwrapKey("raw", key, privKey, "RSA-OAEP", "AES-CBC", false, [
         "decrypt"
     ]).catch((e)=>{
         throw new UnwrapKeyError();
@@ -1778,15 +1775,20 @@ var T = function(i) {
 class CryptoPackError extends Error {
 }
 async function encryptBuffer(jwk, plain) {
-    return encryptByPublicJwk(jwk, plain).then(de1).catch((e)=>{
-        console.error(e);
-        const msg = "不明な復号エラーが発生: " + e.message;
+    return encryptByPublicKey(jwk, plain).then(de1).catch((e)=>{
+        let msg;
+        if (e instanceof DOMException && e.message.startsWith('The JWK member "n"')) {
+            msg = "暗号化ページのURLが破損しています。";
+        } else {
+            console.error(e);
+            msg = "不明な暗号化エラーが発生: " + e.message;
+        }
         throw new CryptoPackError(msg, e);
     });
 }
 async function decryptBuffer(jwk, encoded) {
     const data = ge1(encoded);
-    return decryptByPrivateJwk(jwk, data).catch((e)=>{
+    return decryptByPrivateKey(jwk, data).catch((e)=>{
         let msg;
         if (e instanceof RangeError) {
             msg = "暗号化ファイルではありません";
@@ -1809,25 +1811,25 @@ function Thumbprint({ jwk  }) {
         className: "thumbprint"
     }, thumbp));
 }
-async function encryptFileAndGetResultNode(jwk, file, filename) {
+async function encryptFileAndGetResultNode(key, file, filename) {
     const plain = await readAsArrayBuffer(file);
-    return encryptBuffer(jwk, plain).then((encoded)=>{
+    return encryptBuffer(key, plain).then((encoded)=>{
         const a = arrayBufferToDownloadAnchor(encoded, filename);
-        return export_default1.createElement("p", null, a);
+        return P1(a);
     }).catch((err)=>{
         let msg = file.name + ': ' + err.message;
-        return export_default1.createElement("p", null, msg);
+        return P1(msg);
     });
 }
-async function decryptFileAndGetResultNode(jwk, file) {
+async function decryptFileAndGetResultNode(key, file) {
     const encoded = await readAsArrayBuffer(file);
-    return decryptBuffer(jwk, encoded).then((plain)=>{
+    return decryptBuffer(key, encoded).then((plain)=>{
         const filename = file.name.split('.').slice(0, -2).join('.');
         const a = arrayBufferToDownloadAnchor(plain, filename);
-        return export_default1.createElement("p", null, a);
+        return P1(a);
     }).catch((err)=>{
         let msg = file.name + ': ' + err.message;
-        return export_default1.createElement("p", null, msg);
+        return P1(msg);
     });
 }
 async function blockedThumbprint(privKey) {
@@ -1837,6 +1839,16 @@ async function blockedThumbprint(privKey) {
         ret.push(slice.join(':'));
     }
     return ret.join(':' + String.fromCharCode(8203));
+}
+function KeyIsValid({ cryptoKey , children  }) {
+    if (cryptoKey === false) return export_default1.createElement("p", null, "URL が破損しています。保存されたURLを正しく開いているかご確認ください。");
+    return children;
+}
+let pCount = 0;
+function P1(children) {
+    return export_default1.createElement("p", {
+        key: pCount++
+    }, children);
 }
 const eachSlice = function*(array, size) {
     for(let i = 0, l = array.length; i < l; i += size){
@@ -1864,38 +1876,59 @@ function arrayBufferToDownloadAnchor(buf, filename) {
     const download = filename;
     return export_default1.createElement("a", {
         href: href,
-        download: download
+        download: download,
+        target: "_blank"
     }, filename);
 }
 function Send({ sendTo , pub  }) {
-    const pubKey = fullifyToJwk(pub, 'wrapKey');
+    const jwk = fullifyToJwk(pub, 'wrapKey');
     const [messages, setMessages] = qe([]);
+    const [ckey, setKey] = qe();
+    xe(()=>{
+        importKey(jwk).then(setKey).catch(()=>setKey(false)
+        );
+    }, [
+        pub
+    ]);
     const fileEnc = je(async (e)=>{
+        if (!(ckey instanceof CryptoKey)) return;
         const file = e.target.files[0];
         if (!file) return;
         const filename = file.name + `.${sendTo}.encrypt`;
-        const msgElem = await encryptFileAndGetResultNode(pubKey, file, filename);
+        const msgElem = await encryptFileAndGetResultNode(ckey, file, filename);
         setMessages([
             msgElem,
             ...messages
         ]);
     }, [
+        ckey,
         messages
     ]);
     return export_default1.createElement("main", {
         id: "send"
-    }, export_default1.createElement("head", null, export_default1.createElement("title", null, sendTo, "宛暗号化ページ:NPAP")), export_default1.createElement("h1", null, "暗号化ページ"), export_default1.createElement("p", null, "秘密鍵所有者: ", sendTo), export_default1.createElement("p", null, "このページから暗号化したファイルは、秘密鍵所有者だけが開けます。"), export_default1.createElement(Thumbprint, {
-        jwk: pubKey
+    }, export_default1.createElement("head", null, export_default1.createElement("title", null, sendTo, "宛暗号化ページ:NPAP")), export_default1.createElement("h1", null, "暗号化ページ"), export_default1.createElement(KeyIsValid, {
+        cryptoKey: ckey
+    }, export_default1.createElement("p", null, "秘密鍵所有者: ", sendTo), export_default1.createElement("p", null, "このページから暗号化したファイルは、秘密鍵所有者だけが開けます。"), export_default1.createElement(Thumbprint, {
+        jwk: jwk
     }), export_default1.createElement("h2", null, "ファイルの暗号化"), export_default1.createElement("input", {
         type: "file",
         onChange: fileEnc
-    }), messages);
+    }), messages));
 }
 function Receive({ receiveBy , secrets  }) {
-    const privKey = fullifyToJwk(secrets, 'unwrapKey');
+    const privJwk = fullifyToJwk(secrets, 'unwrapKey');
+    const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(receiveBy)}&n=${privJwk.n}`;
     const [messages, setMessages] = qe([]);
-    const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(receiveBy)}&n=${privKey.n}`;
+    const [privKey, setPrivKey] = qe();
+    xe(()=>{
+        importKey(privJwk).then((x)=>setPrivKey(x)
+        ).catch(()=>setPrivKey(false)
+        );
+    }, [
+        secrets
+    ]);
     const fileDec = je(async (e)=>{
+        if (!(privKey instanceof CryptoKey)) return;
         const file = e.target.files[0];
         if (!file) return;
         const msgElem = await decryptFileAndGetResultNode(privKey, file);
@@ -1904,12 +1937,15 @@ function Receive({ receiveBy , secrets  }) {
             ...messages
         ]);
     }, [
+        privKey,
         messages
     ]);
     return export_default1.createElement("main", {
         id: "receive"
-    }, export_default1.createElement("head", null, export_default1.createElement("title", null, receiveBy, "の秘密鍵ページ:NPAP")), export_default1.createElement("h1", null, "秘密鍵ページ"), export_default1.createElement("p", null, "所有者: ", receiveBy), export_default1.createElement(Thumbprint, {
-        jwk: privKey
+    }, export_default1.createElement("head", null, export_default1.createElement("title", null, receiveBy, "の秘密鍵ページ:NPAP")), export_default1.createElement("h1", null, "秘密鍵ページ"), export_default1.createElement(KeyIsValid, {
+        cryptoKey: privKey
+    }, export_default1.createElement("p", null, "所有者: ", receiveBy), export_default1.createElement(Thumbprint, {
+        jwk: privJwk
     }), export_default1.createElement("p", null, "このページはあなた専用のものです。", export_default1.createElement("br", null), "再生成は出来ませんので、 URL をブックマーク等に保存しておいてください。", export_default1.createElement("br", null), "URL には秘密鍵が含まれています。大切に保管し、誰かにメール等で送ることはしないでください。"), export_default1.createElement("h2", null, "「暗号化ページ」を送る"), export_default1.createElement("p", null, "以下のURLをメール等で送信者に送付してください。"), export_default1.createElement("input", {
         type: "text",
         value: sendPath,
@@ -1924,7 +1960,7 @@ function Receive({ receiveBy , secrets  }) {
     }, "開いてみる"), export_default1.createElement("h2", null, "ファイルの復号"), export_default1.createElement("p", null, "「暗号化ページ」で暗号化されたファイルを受け取りましたら、以下から復号できます。"), export_default1.createElement("p", null, "処理はネットを介さず、あなたのマシン上で処理されます。"), export_default1.createElement("input", {
         type: "file",
         onChange: fileDec
-    }), messages);
+    }), messages));
 }
 const missing = missingFeature();
 function Npap() {
@@ -2222,7 +2258,7 @@ var V1 = H1((se, A)=>{
     A.exports = $1();
 });
 var oe3 = J2(V1()), ie1 = J2(V1()), { unstable_now: ce1 , unstable_shouldYield: fe3 , unstable_forceFrameRate: be , unstable_IdlePriority: pe2 , unstable_ImmediatePriority: de2 , unstable_LowPriority: _e1 , unstable_NormalPriority: ye2 , unstable_Profiling: me2 , unstable_UserBlockingPriority: ve2 , unstable_cancelCallback: he2 , unstable_continueExecution: we2 , unstable_getCurrentPriorityLevel: ke1 , unstable_getFirstCallbackNode: ge2 , unstable_next: Pe1 , unstable_pauseExecution: xe2 , unstable_requestPaint: Te , unstable_runWithPriority: Ie1 , unstable_scheduleCallback: Me , unstable_wrapCallback: je1  } = oe3;
-var export_default9 = ie1.default;
+var export_default11 = ie1.default;
 var _s = Object.create;
 var Or = Object.defineProperty;
 var Ns = Object.getOwnPropertyDescriptor;
@@ -2256,7 +2292,7 @@ var Os = (e, n, t)=>{
 ;
 var Es = Ri((ie)=>{
     "use strict";
-    var _t = export_default1, M = export_default, U = export_default9;
+    var _t = export_default1, M = export_default, U = export_default11;
     function v(e) {
         for(var n = "https://reactjs.org/docs/error-decoder.html?invariant=" + e, t = 1; t < arguments.length; t++)n += "&args[]=" + encodeURIComponent(arguments[t]);
         return "Minified React error #" + e + "; visit " + n + " for the full message or use the non-minified dev environment for full errors and additional helpful warnings.";

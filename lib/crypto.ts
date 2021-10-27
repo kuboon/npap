@@ -1,7 +1,7 @@
 import { EncData } from "./types.ts";
 
 export function missingFeature() {
-  if (typeof Deno != 'undefined') return null;
+  if (typeof Deno != "undefined") return null;
   if (typeof crypto == "undefined") return "crypto";
   const { subtle } = crypto;
   if (!subtle) return "crypto.subtle";
@@ -36,19 +36,20 @@ export async function generateJwkPair() {
   const privateKey = await subtle.exportKey("jwk", keyPair.privateKey!);
   return { publicKey, privateKey };
 }
-
-export async function encryptByPublicJwk(
-  jwk: JsonWebKey,
-  plain: ArrayBuffer,
-): Promise<EncData> {
-  const wrapperKey = await subtle
+export function importKey(jwk: JsonWebKey) {
+  return subtle
     .importKey(
       "jwk",
       jwk,
       RSAalgorithm,
       false,
-      ["wrapKey"],
+      jwk.key_ops as ("wrapKey" | "unwrapKey")[],
     );
+}
+export async function encryptByPublicKey(
+  wrapperKey: CryptoKey,
+  plain: ArrayBuffer,
+): Promise<EncData> {
   const aeskey = await subtle.generateKey(
     {
       name: "AES-CBC",
@@ -69,19 +70,13 @@ export async function encryptByPublicJwk(
 }
 
 export class UnwrapKeyError extends Error {}
-export async function decryptByPrivateJwk(privKey: JsonWebKey, data: EncData) {
-  const unwrapperKey = await subtle.importKey(
-    "jwk",
-    privKey,
-    RSAalgorithm,
-    false,
-    ["unwrapKey"],
-  );
+export async function decryptByPrivateKey(privKey: CryptoKey, data: EncData) {
   const { key, iv, encrypted } = data;
+
   const aeskey = await subtle.unwrapKey(
     "raw",
     key,
-    unwrapperKey,
+    privKey,
     "RSA-OAEP",
     "AES-CBC",
     false,

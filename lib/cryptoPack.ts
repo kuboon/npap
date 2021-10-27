@@ -1,23 +1,29 @@
 import { EncData } from "./types.ts";
 import {
-  decryptByPrivateJwk,
-  encryptByPublicJwk,
+  decryptByPrivateKey,
+  encryptByPublicKey,
   UnwrapKeyError,
 } from "./crypto.ts";
 import { decode, encode } from "msgpack";
 
 export class CryptoPackError extends Error {}
-export async function encryptBuffer(jwk: JsonWebKey, plain: ArrayBuffer) {
-  return encryptByPublicJwk(jwk, plain).then(encode).catch((e: any) => {
-    // 暗号化は通常失敗しない
-    console.error(e);
-    const msg = "不明な復号エラーが発生: " + e.message;
+export async function encryptBuffer(jwk: CryptoKey, plain: ArrayBuffer) {
+  return encryptByPublicKey(jwk, plain).then(encode).catch((e: any) => {
+    let msg: string;
+    if (
+      e instanceof DOMException && e.message.startsWith('The JWK member "n"')
+    ) {
+      msg = "暗号化ページのURLが破損しています。";
+    } else {
+      console.error(e);
+      msg = "不明な暗号化エラーが発生: " + e.message;
+    }
     throw new CryptoPackError(msg, e);
   });
 }
-export async function decryptBuffer(jwk: JsonWebKey, encoded: ArrayBuffer) {
+export async function decryptBuffer(jwk: CryptoKey, encoded: ArrayBuffer) {
   const data = decode(encoded) as EncData;
-  return decryptByPrivateJwk(jwk, data).catch((e: any) => {
+  return decryptByPrivateKey(jwk, data).catch((e: any) => {
     let msg: string;
     if (e instanceof RangeError) {
       // msgpack failed

@@ -17,38 +17,38 @@ export function Thumbprint ({ jwk }: { jwk: JsonWebKey }) {
   )
 }
 export async function encryptFileAndGetResultNode (
-  jwk: JsonWebKey,
+  key: CryptoKey,
   file: File,
   filename: string
 ) {
   const plain = await readAsArrayBuffer(file)
-  return encryptBuffer(jwk, plain)
+  return encryptBuffer(key, plain)
     .then(encoded => {
       const a = arrayBufferToDownloadAnchor(encoded, filename)
-      return <p>{a}</p>
+      return P(a)
     })
     .catch((err: CryptoPackError) => {
       let msg = file.name + ': ' + err.message
-      return <p>{msg}</p>
+      return P(msg)
     })
 }
 export async function decryptFileAndGetResultNode (
-  jwk: JsonWebKey,
+  key: CryptoKey,
   file: File
 ) {
   const encoded = await readAsArrayBuffer(file)
-  return decryptBuffer(jwk, encoded)
+  return decryptBuffer(key, encoded)
     .then(plain => {
       const filename = file.name
         .split('.')
         .slice(0, -2)
         .join('.')
       const a = arrayBufferToDownloadAnchor(plain, filename)
-      return <p>{a}</p>
+      return P(a)
     })
     .catch((err: CryptoPackError) => {
       let msg = file.name + ': ' + err.message
-      return <p>{msg}</p>
+      return P(msg)
     })
 }
 export async function blockedThumbprint (privKey: JsonWebKey) {
@@ -59,7 +59,26 @@ export async function blockedThumbprint (privKey: JsonWebKey) {
   }
   return ret.join(':' + String.fromCharCode(8203))
 }
+export function KeyIsValid ({
+  cryptoKey,
+  children
+}: {
+  cryptoKey: CryptoKey | false | undefined
+  children: any
+}) {
+  if (cryptoKey === false)
+    return (
+      <p>
+        URL が破損しています。保存されたURLを正しく開いているかご確認ください。
+      </p>
+    )
+  return children
+}
 
+let pCount = 0
+function P(children: any){
+  return <p key={pCount++}>{children}</p>
+}
 const eachSlice = function *<T> (array: T[], size: number) {
   for (let i = 0, l = array.length; i < l; i += size) {
     yield array.slice(i, i + size)
@@ -80,7 +99,7 @@ function arrayBufferToDownloadAnchor (buf: ArrayBuffer, filename: string) {
   const href = arrayBufferToObjectUrl(buf)
   const download = filename
   return (
-    <a href={href} download={download}>
+    <a href={href} download={download} target='_blank'>
       {filename}
     </a>
   )
