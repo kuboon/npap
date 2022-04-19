@@ -81,7 +81,7 @@ export async function decryptByPrivateKey(privKey: CryptoKey, data: EncData) {
     "AES-CBC",
     false,
     ["decrypt"],
-  ).catch((e: DOMException) => {
+  ).catch((_e: DOMException) => {
     throw new UnwrapKeyError();
   });
 
@@ -98,7 +98,7 @@ export async function thumbprint(jwk: JsonWebKey) {
   return hexArray;
 }
 
-async function aesEncrypt(key: CryptoKey, iv: Uint8Array, plain: ArrayBuffer) {
+function aesEncrypt(key: CryptoKey, iv: Uint8Array, plain: ArrayBuffer) {
   return subtle.encrypt(
     {
       name: "AES-CBC",
@@ -109,17 +109,17 @@ async function aesEncrypt(key: CryptoKey, iv: Uint8Array, plain: ArrayBuffer) {
   );
 }
 
-async function aesDecrypt(
+function aesDecrypt(
   key: CryptoKey,
   iv: Uint8Array,
   encrypted: ArrayBuffer,
 ) {
-  return await subtle.decrypt(
+  return subtle.decrypt(
     {
       name: "AES-CBC",
       iv,
     },
     key,
     encrypted,
-  ) as ArrayBuffer;
+  ) as Promise<ArrayBuffer>;
 }

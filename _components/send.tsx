@@ -1,7 +1,8 @@
-import { fullifyToJwk } from '../lib/keys.ts'
-import { importKey } from '../lib/crypto.ts'
-import { encryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../lib/util.tsx'
-import React, { useCallback, useEffect, useState } from 'react'
+import { fullifyToJwk } from '../_lib/keys.ts'
+import { importKey } from '../_lib/crypto.ts'
+import { encryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../_lib/util.tsx'
+import { React } from "../_lib/deps.ts";
+const { useCallback, useEffect, useState } = React;
 
 export default function Send ({ sendTo, pub }: { sendTo: string; pub: any }) {
   const jwk = fullifyToJwk(pub, 'wrapKey')

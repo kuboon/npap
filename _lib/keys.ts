@@ -17,7 +17,7 @@ export function minifyJwk(jwk: JsonWebKey) {
   return pick(jwk, KeyEssence)
 }
 
-export function fullifyToJwk(obj: object, ops: 'wrapKey'|'unwrapKey') {
+export function fullifyToJwk(obj: Record<string, unknown>, ops: 'wrapKey'|'unwrapKey') {
   return {
     key_ops: [ops],
     ...jwkBase,

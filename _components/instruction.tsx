@@ -1,20 +1,21 @@
-import { minifyJwk } from '../lib/keys.ts'
-import { generateJwkPair } from '../lib/crypto.ts'
-import React, { useRef } from 'react'
+import { minifyJwk } from "../_lib/keys.ts";
+import { generateJwkPair } from "../_lib/crypto.ts";
+import { React } from "../_lib/deps.ts";
+const { useRef } = React;
 
-export default function Instruction () {
-  const inputRef = useRef<HTMLInputElement>(null)
+export default function Instruction() {
+  const inputRef = useRef<HTMLInputElement>(null);
   const generate = () => {
-    const name = inputRef.current!.value
-    if (name.length == 0) return
-    generateJwkPair().then(keyPair => {
-      const obj = { receive_by: name, ...minifyJwk(keyPair.privateKey) }
-      const urlParam = new URLSearchParams(obj)
-      location.hash = urlParam.toString()
-    })
-  }
+    const name = inputRef.current!.value;
+    if (name.length == 0) return;
+    generateJwkPair().then((keyPair) => {
+      const obj = { receive_by: name, ...minifyJwk(keyPair.privateKey) };
+      const urlParam = new URLSearchParams(obj);
+      location.hash = urlParam.toString();
+    });
+  };
   return (
-    <main id='instruction'>
+    <main id="instruction">
       <head>
         <title>NPAP 鍵生成ページ</title>
       </head>
@@ -23,7 +24,7 @@ export default function Instruction () {
       <p>
         受信者のお名前
         <br />
-        <input type='text' ref={inputRef} required={true} />
+        <input type="text" ref={inputRef} required={true} />
         <br />
         <button onClick={generate}>「秘密鍵ページ」を作成</button>
       </p>
@@ -51,9 +52,7 @@ export default function Instruction () {
         「秘密鍵ページ」は受信者の手元にあればよく、送信者には必要ありません。つまり、復号に必要な情報は一切ネットに流出しません。
       </p>
       <p>
-        NPAP
-        の秘密鍵はURLの「#」以降のハッシュ文字列と呼ばれる部分に格納してあります。
-        ブラウザはこの情報をどこにも送りませんので、NPAP
+        NPAP の秘密鍵はURLの「#」以降のハッシュ文字列と呼ばれる部分に格納してあります。 ブラウザはこの情報をどこにも送りませんので、NPAP
         のサーバーにさえ秘密鍵は送信されません。
       </p>
       <h2>鍵指紋とは</h2>
@@ -62,5 +61,5 @@ export default function Instruction () {
         両者の鍵指紋を検証することで、対応しているペアかどうかを確認できます。
       </p>
     </main>
-  )
+  );
 }

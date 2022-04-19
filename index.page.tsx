@@ -1,11 +1,5 @@
 import React from 'react'
 
-declare namespace JSX {
-  interface IntrinsicElements {
-    [elemName: string]: any
-  }
-}
-
 export default function Home() {
   return (
     <main id='top'>

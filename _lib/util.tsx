@@ -1,6 +1,7 @@
 import { thumbprint } from './crypto.ts'
 import { CryptoPackError, decryptBuffer, encryptBuffer } from './cryptoPack.ts'
-import React, { useEffect, useState } from 'react'
+import { React } from "./deps.ts";
+const { useCallback, useEffect, useState } = React;
 
 export function Thumbprint ({ jwk }: { jwk: JsonWebKey }) {
   const [thumbp, setThumbp] = useState('')

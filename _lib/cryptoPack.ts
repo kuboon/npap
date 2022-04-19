@@ -4,11 +4,12 @@ import {
   encryptByPublicKey,
   UnwrapKeyError,
 } from "./crypto.ts";
-import { decode, encode } from "msgpack";
+import { msgpack } from "./deps.ts";
+const { decode, encode } = msgpack;
 
 export class CryptoPackError extends Error {}
-export async function encryptBuffer(jwk: CryptoKey, plain: ArrayBuffer) {
-  return encryptByPublicKey(jwk, plain).then(encode).catch((e: any) => {
+export function encryptBuffer(jwk: CryptoKey, plain: ArrayBuffer) {
+  return encryptByPublicKey(jwk, plain).then(encode).catch((e: Error) => {
     let msg: string;
     if (
       e instanceof DOMException && e.message.startsWith('The JWK member "n"')
@@ -21,9 +22,9 @@ export async function encryptBuffer(jwk: CryptoKey, plain: ArrayBuffer) {
     throw new CryptoPackError(msg, e);
   });
 }
-export async function decryptBuffer(jwk: CryptoKey, encoded: ArrayBuffer) {
+export function decryptBuffer(jwk: CryptoKey, encoded: ArrayBuffer) {
   const data = decode(encoded) as EncData;
-  return decryptByPrivateKey(jwk, data).catch((e: any) => {
+  return decryptByPrivateKey(jwk, data).catch((e: Error) => {
     let msg: string;
     if (e instanceof RangeError) {
       // msgpack failed

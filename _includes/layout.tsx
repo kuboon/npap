@@ -1,5 +1,5 @@
 import React, { FC } from 'react'
-import Logo from './components/logo.tsx'
+import Logo from '../_components/logo.tsx'
 
 export default function App ({
   Page,
