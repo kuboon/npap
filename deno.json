@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "lib": [
       "dom",
       "dom.iterable",
@@ -10,8 +9,6 @@
     ],
     "jsx": "react"
   },
-  "lint": {},
-  "format": {},
   "importMap": "import_map.json",
   "tasks": {
     "build": "deno run -A https://deno.land/x/lume@v1.7.4/ci.ts",

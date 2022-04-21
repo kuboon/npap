@@ -1,5 +1,7 @@
 import React from 'react'
 
+export const layout = "layout.page.tsx";
+
 export default function Home() {
   return (
     <main id='top'>

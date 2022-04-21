@@ -1,7 +1,7 @@
 import { thumbprint } from './crypto.ts'
 import { CryptoPackError, decryptBuffer, encryptBuffer } from './cryptoPack.ts'
 import { React } from "./deps.ts";
-const { useCallback, useEffect, useState } = React;
+const { useEffect, useState } = React;
 
 export function Thumbprint ({ jwk }: { jwk: JsonWebKey }) {
   const [thumbp, setThumbp] = useState('')
@@ -48,13 +48,13 @@ export async function decryptFileAndGetResultNode (
       return P(a)
     })
     .catch((err: CryptoPackError) => {
-      let msg = file.name + ': ' + err.message
+      const msg = file.name + ': ' + err.message
       return P(msg)
     })
 }
 export async function blockedThumbprint (privKey: JsonWebKey) {
   const a = await thumbprint(privKey)
-  let ret = [] as string[]
+  const ret = [] as string[]
   for (const slice of eachSlice(a, 8)) {
     ret.push(slice.join(':'))
   }
@@ -65,7 +65,7 @@ export function KeyIsValid ({
   children
 }: {
   cryptoKey: CryptoKey | false | undefined
-  children: any
+  children: React.ReactNode
 }) {
   if (cryptoKey === false)
     return (
@@ -73,7 +73,7 @@ export function KeyIsValid ({
         URL が破損しています。保存されたURLを正しく開いているかご確認ください。
       </p>
     )
-  return children
+  return <>{children}</>
 }
 
 let pCount = 0
@@ -85,7 +85,7 @@ const eachSlice = function *<T> (array: T[], size: number) {
     yield array.slice(i, i + size)
   }
 }
-const readAsArrayBuffer = async (file: File) =>
+const readAsArrayBuffer = (file: File) =>
   new Promise<ArrayBuffer>((ok, ng) => {
     const reader = new FileReader()
     reader.onload = () => ok(reader.result as ArrayBuffer)
