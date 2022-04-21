@@ -1,12 +1,12 @@
 /// <reference lib="dom" />
-import { missingFeature } from "./_lib/crypto.ts";
-import Instruction from "./_components/instruction.tsx";
-import Send from "./_components/send.tsx";
-import Receive from "./_components/receive.tsx";
-import { React } from "./_lib/deps.ts";
+import { missingFeature } from "../_lib/crypto.ts";
+import Instruction from "./_/instruction.tsx";
+import Send from "./_/send.tsx";
+import Receive from "./_/receive.tsx";
+import { React, ReactDOM } from "../_lib/deps.ts";
 
 const missing = missingFeature();
-export default function Npap() {
+function Npap() {
   if (missing) {
     return (
       <p>
@@ -15,8 +15,9 @@ export default function Npap() {
       </p>
     );
   }
-  const hash = "";
   const version = "1.1";
+  const [hash, setHash] = React.useState(location.hash.slice(1));
+  addEventListener("hashchange", () => setHash(location.hash.slice(1)));
 
   return (
     <div id="npap">
@@ -46,3 +47,4 @@ function Pages({ urlString }: { urlString: string }) {
   }
   return <Instruction />;
 }
+ReactDOM.render(<Npap />, document.getElementById("app"));

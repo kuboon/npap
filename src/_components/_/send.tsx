@@ -1,7 +1,7 @@
-import { fullifyToJwk } from '../_lib/keys.ts'
-import { importKey } from '../_lib/crypto.ts'
-import { encryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../_lib/util.tsx'
-import { React } from "../_lib/deps.ts";
+import { fullifyToJwk } from '../../_lib/keys.ts'
+import { importKey } from '../../_lib/crypto.ts'
+import { encryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../../_lib/util.tsx'
+import { React } from "../../_lib/deps.ts";
 const { useCallback, useEffect, useState } = React;
 
 export default function Send ({ sendTo, pub }: { sendTo: string; pub: any }) {
@@ -14,9 +14,9 @@ export default function Send ({ sendTo, pub }: { sendTo: string; pub: any }) {
       .catch(() => setKey(false))
   }, [pub])
   const fileEnc = useCallback(
-    async (e: React.ChangeEvent) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!(ckey instanceof CryptoKey)) return
-      const file = (e.target as any).files[0]
+      const file = e.target.files?.[0]
       if (!file) return
       const filename = file.name + `.${sendTo}.encrypt`
       const msgElem = await encryptFileAndGetResultNode(ckey, file, filename)

@@ -1,7 +1,7 @@
-import { importKey } from '../_lib/crypto.ts'
-import { fullifyToJwk } from '../_lib/keys.ts'
-import { decryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../_lib/util.tsx'
-import { React } from "../_lib/deps.ts";
+import { importKey } from '../../_lib/crypto.ts'
+import { fullifyToJwk } from '../../_lib/keys.ts'
+import { decryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../../_lib/util.tsx'
+import { React } from "../../_lib/deps.ts";
 const { useCallback, useEffect, useState } = React;
 
 export default function Receive ({
