@@ -1,8 +1,6 @@
 /// <reference lib="dom" />
 import { missingFeature } from "../_lib/crypto.ts";
-import Instruction from "./_/instruction.tsx";
-import Send from "./_/send.tsx";
-import Receive from "./_/receive.tsx";
+import { Instruction, Receive, Send } from "../_pages/mod.ts";
 import { React, ReactDOM } from "../_lib/deps.ts";
 
 const missing = missingFeature();

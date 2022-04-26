@@ -1,6 +1,6 @@
-import { minifyJwk } from "../../_lib/keys.ts";
-import { generateJwkPair } from "../../_lib/crypto.ts";
-import { React } from "../../_lib/deps.ts";
+import { minifyJwk } from "../_lib/keys.ts";
+import { generateJwkPair } from "../_lib/crypto.ts";
+import { React } from "../_lib/deps.ts";
 const { useRef } = React;
 
 export default function Instruction() {

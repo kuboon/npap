@@ -29,7 +29,7 @@ export async function encryptFileAndGetResultNode (
       return P(a)
     })
     .catch((err: CryptoPackError) => {
-      let msg = file.name + ': ' + err.message
+      const msg = file.name + ': ' + err.message
       return P(msg)
     })
 }
@@ -77,7 +77,7 @@ export function KeyIsValid ({
 }
 
 let pCount = 0
-function P(children: any){
+function P(children: React.ReactNode){
   return <p key={pCount++}>{children}</p>
 }
 const eachSlice = function *<T> (array: T[], size: number) {
@@ -85,13 +85,15 @@ const eachSlice = function *<T> (array: T[], size: number) {
     yield array.slice(i, i + size)
   }
 }
-const readAsArrayBuffer = (file: File) =>
-  new Promise<ArrayBuffer>((ok, ng) => {
-    const reader = new FileReader()
+const readAsArrayBuffer = (file: File) => {
+  return new Promise<ArrayBuffer>((ok, ng) => {
+    const reader = new FileReader() //a
     reader.onload = () => ok(reader.result as ArrayBuffer)
     reader.onerror = ng
     reader.readAsArrayBuffer(file)
   })
+
+}
 function arrayBufferToObjectUrl (buf: ArrayBuffer) {
   const blob = new Blob([buf], { type: 'application/octet-stream' })
   return URL.createObjectURL(blob)

@@ -1,7 +1,7 @@
-import { importKey } from '../../_lib/crypto.ts'
-import { fullifyToJwk } from '../../_lib/keys.ts'
-import { decryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../../_lib/util.tsx'
-import { React } from "../../_lib/deps.ts";
+import { importKey } from '../_lib/crypto.ts'
+import { fullifyToJwk } from '../_lib/keys.ts'
+import { decryptFileAndGetResultNode, KeyIsValid, Thumbprint } from '../_lib/util.tsx'
+import { React } from "../_lib/deps.ts";
 const { useCallback, useEffect, useState } = React;
 
 export default function Receive ({
@@ -9,7 +9,7 @@ export default function Receive ({
   secrets
 }: {
   receiveBy: string
-  secrets: any
+  secrets: Record<string, unknown>
 }) {
   const privJwk = fullifyToJwk(secrets, 'unwrapKey')
   const sendPath = `${location.origin}${location.pathname}#send_to=${encodeURI(
