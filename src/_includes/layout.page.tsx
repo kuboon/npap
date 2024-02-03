@@ -16,7 +16,7 @@ export default function Layout(
     <html lang="ja">
       <head>
         <meta charSet="utf-8" />
-        <link rel="stylesheet" href="/style/index.css" />
+        <link rel="stylesheet" href="/style/index.css" inline="true" />
         <meta name="viewport" content="width=device-width" />
         <link rel="icon" href={svgDataUri} type="image/svg+xml"></link>
         <meta property="og:title" content="NPAP: No Password All Protected" />
