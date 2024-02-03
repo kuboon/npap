@@ -1,5 +1,3 @@
-import React from 'react'
-
 export const layout = "layout.page.tsx";
 
 export default function Home() {
@@ -13,7 +11,7 @@ export default function Home() {
         <a href='/NPAP'>NPAP を開く</a>
       </p>
       <p>
-        <a href='/NPAP.html' download="NPAP.html" target='_blank'>NPAP をダウンロード (htmlファイル)</a>
+        <a href='/NPAP' download="NPAP.html" target='_blank'>NPAP をダウンロード (htmlファイル)</a>
       </p>
       <p>
         <a href='https://github.com/kuboon/npap'>Github</a>

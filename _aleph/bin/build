@@ -1,5 +1,0 @@
-#!/bin/env sh
-land aleph build
-touch docs/.nojekyll
-deno bundle --import-map import_map.json --config=tsconfig.json lib/render.ts > docs/npap.js
-bin/bundle.ts

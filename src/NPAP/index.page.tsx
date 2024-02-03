@@ -1,9 +1,4 @@
-import React from "react";
-
 export const layout = "layout.page.tsx";
-interface HTMLScriptElement {
-  inline: boolean;
-}
 
 export default function Npap() {
   return (

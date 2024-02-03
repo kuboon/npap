@@ -6,6 +6,11 @@ import { React, ReactDOM } from "../_lib/deps.ts";
 const missing = missingFeature();
 function Npap() {
   if (missing) {
+    if (location.protocol !== "https:") {
+      return (
+        <p>ブラウザの暗号化機能を利用するために https が必須です。</p>
+      );
+    }
     return (
       <p>
         お使いのブラウザはNPAPに対応しておりません。 セキュリティ確保のためにも最新のブラウザをご利用ください。<br />

@@ -1,17 +1,17 @@
 {
-  "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "dom.asynciterable",
-      "deno.ns",
-      "deno.unstable"
-    ],
-    "jsx": "react"
-  },
-  "importMap": "import_map.json",
   "tasks": {
-    "build": "deno run -A https://deno.land/x/lume@v1.7.4/ci.ts",
-    "serve": "deno task build -- -s"
+    "lume": "echo \"import 'lume/cli.ts'\" | deno run --unstable -A -",
+    "build": "deno task lume",
+    "serve": "deno task lume -s"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "npm:react",
+    "types": [
+      "lume/types.ts"
+    ]
+  },
+  "imports": {
+    "lume/": "https://deno.land/x/lume@v2.0.3/"
   }
 }
